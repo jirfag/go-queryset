@@ -93,7 +93,7 @@ func getQuerySetFieldMethods(pkgInfo *loader.PackageInfo, fields []parser.Struct
 	return ret
 }
 
-func generateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
+func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
 	querySetStructConfigs := querySetStructConfigSlice{}
 
 	for structType, structFields := range structs {

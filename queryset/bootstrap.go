@@ -20,7 +20,7 @@ func GenerateQuerySets(inFilePath, outFilePath string) error {
 	}
 
 	var r io.Reader
-	r, err = generateQuerySetsForStructs(pkgInfo, structs)
+	r, err = GenerateQuerySetsForStructs(pkgInfo, structs)
 	if err != nil {
 		return fmt.Errorf("can't generate query sets: %s", err)
 	}
