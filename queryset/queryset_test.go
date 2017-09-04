@@ -1,12 +1,52 @@
 package queryset
 
 import (
+	"log"
 	"os"
 	"testing"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/jirfag/go-queryset/queryset/test"
+	"github.com/stretchr/testify/assert"
+
+	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 
+func newDB() (sqlmock.Sqlmock, *gorm.DB) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		log.Fatalf("can't create sqlmock: %s", err)
+	}
+
+	gormDB, gerr := gorm.Open("sqlite", db)
+	if gerr != nil {
+		log.Fatalf("can't open gorm connection: %s", err)
+	}
+	gormDB.LogMode(true)
+
+	return mock, gormDB
+}
+
+var userFields = []string{"id", "name"}
+
+func checkMock(t *testing.T, mock sqlmock.Sqlmock) {
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expections: %s", err)
+	}
+}
+
 func TestUserSelect(t *testing.T) {
-	//test.UserQuerySet{}.All(ret)
+	m, db := newDB()
+	defer checkMock(t, m)
+	m.ExpectQuery(`SELECT \* FROM "users"`).
+		WillReturnRows(sqlmock.NewRows(userFields).AddRow(1, "name"))
+
+	var users []test.User
+	assert.Nil(t, test.NewUserQuerySet(db).All(&users))
+	assert.Len(t, users, 1)
+	assert.Equal(t, 1, users[0].ID)
+	assert.Equal(t, "name", users[0].Name)
 }
 
 func TestMain(m *testing.M) {
