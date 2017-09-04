@@ -115,7 +115,7 @@ func (m *fieldOperationNoArgsMethod) setGormMethodName(name string) {
 
 // GetBody returns method body
 func (m fieldOperationNoArgsMethod) GetBody() string {
-	return m.wrapMethod(fmt.Sprintf(`return d.%s("%s")`, m.gormMethodName, m.fieldName))
+	return m.wrapMethod(fmt.Sprintf(`return d.%s("%s")`, m.gormMethodName, gorm.ToDBName(m.fieldName)))
 }
 
 func newFieldOperationNoArgsMethod(name, fieldName string) fieldOperationNoArgsMethod {
