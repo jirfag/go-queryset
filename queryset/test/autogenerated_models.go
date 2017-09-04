@@ -9,6 +9,7 @@ import (
 
 // ===== BEGIN of query set BlogQuerySet
 
+// BlogQuerySet is an queryset type for Blog
 type BlogQuerySet struct {
 	b base.Base
 }
@@ -93,10 +94,13 @@ func (qs BlogQuerySet) OrderByID() BlogQuerySet {
 	return qs
 }
 
+// All is used to retieve slice of results
 func (qs BlogQuerySet) All(ret *[]Blog) error {
 	return qs.b.GetQuerySet().Find(ret).Error
 }
 
+// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
+// if nothing was fetched
 func (qs BlogQuerySet) One(ret *Blog) error {
 	return qs.b.GetQuerySet().First(ret).Error
 }
@@ -105,6 +109,7 @@ func (qs BlogQuerySet) One(ret *Blog) error {
 
 // ===== BEGIN of query set PostQuerySet
 
+// PostQuerySet is an queryset type for Post
 type PostQuerySet struct {
 	b base.Base
 }
@@ -197,10 +202,13 @@ func (qs PostQuerySet) TitleNe(title string) PostQuerySet {
 	return qs
 }
 
+// All is used to retieve slice of results
 func (qs PostQuerySet) All(ret *[]Post) error {
 	return qs.b.GetQuerySet().Find(ret).Error
 }
 
+// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
+// if nothing was fetched
 func (qs PostQuerySet) One(ret *Post) error {
 	return qs.b.GetQuerySet().First(ret).Error
 }
@@ -209,6 +217,7 @@ func (qs PostQuerySet) One(ret *Post) error {
 
 // ===== BEGIN of query set UserQuerySet
 
+// UserQuerySet is an queryset type for User
 type UserQuerySet struct {
 	b base.Base
 }
@@ -293,10 +302,13 @@ func (qs UserQuerySet) OrderByID() UserQuerySet {
 	return qs
 }
 
+// All is used to retieve slice of results
 func (qs UserQuerySet) All(ret *[]User) error {
 	return qs.b.GetQuerySet().Find(ret).Error
 }
 
+// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
+// if nothing was fetched
 func (qs UserQuerySet) One(ret *User) error {
 	return qs.b.GetQuerySet().First(ret).Error
 }

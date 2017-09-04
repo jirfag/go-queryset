@@ -48,7 +48,11 @@ func TestFileNameToPkgName(t *testing.T) {
 
 func getTempFileName(rootDir, prefix, suffix string) (*os.File, error) {
 	randBytes := make([]byte, 16)
-	rand.Read(randBytes)
+	_, err := rand.Read(randBytes)
+	if err != nil {
+		return nil, fmt.Errorf("can't generate random bytes: %s", err)
+	}
+
 	p := filepath.Join(rootDir, prefix+hex.EncodeToString(randBytes)+suffix)
 	return os.Create(p)
 }
@@ -151,6 +155,18 @@ type structFieldsCase struct {
 	expectedStructsCount int
 }
 
+func (tc structFieldsCase) getExpectedtructsCount() int {
+	expectedStructsCount := 1
+	if tc.expectedStructFields == nil {
+		expectedStructsCount = 0
+	}
+	if tc.expectedStructsCount != 0 {
+		expectedStructsCount = tc.expectedStructsCount
+	}
+
+	return expectedStructsCount
+}
+
 func TestGetStructsInFile(t *testing.T) {
 	cases := []structFieldsCase{
 		{
@@ -233,19 +249,9 @@ func testStructFields(t *testing.T, tc structFieldsCase) {
 	assert.Nil(t, err)
 	assert.NotNil(t, pkg)
 	assert.NotNil(t, structs)
-	if tc.expectedStructFields == nil {
-		tc.expectedStructFields = []string{}
-	}
 
-	expectedStructsCount := 1
-	if len(tc.expectedStructFields) == 0 {
-		expectedStructsCount = 0
-	}
-	if tc.expectedStructsCount != 0 {
-		expectedStructsCount = tc.expectedStructsCount
-	}
-	assert.Len(t, structs, expectedStructsCount)
-	if expectedStructsCount == 0 {
+	assert.Len(t, structs, tc.getExpectedtructsCount())
+	if tc.getExpectedtructsCount() == 0 {
 		return
 	}
 

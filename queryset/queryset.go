@@ -44,7 +44,7 @@ func (s querySetStructConfigSlice) Less(i, j int) bool {
 }
 func (s querySetStructConfigSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ types.Type, originalTypeName string) []method {
+func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringer, originalTypeName string) []method {
 	typeName := typ.String()
 	if originalTypeName != "" {
 		// it's needed to preserver typedef's original name
@@ -93,6 +93,8 @@ func getQuerySetFieldMethods(pkgInfo *loader.PackageInfo, fields []parser.Struct
 	return ret
 }
 
+// GenerateQuerySetsForStructs is an internal method to retrieve querysets
+// generated code from parsed structs
 func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
 	querySetStructConfigs := querySetStructConfigSlice{}
 
@@ -155,6 +157,7 @@ const qsCode = `
 {{ range .Configs }}
   // ===== BEGIN of query set {{ .Name }}
 
+	// {{ .Name }} is an queryset type for {{ .StructName }}
   type {{ .Name }} struct {
     b base.Base
   }
@@ -168,10 +171,13 @@ const qsCode = `
 		}
 	{{ end }}
 
+	// All is used to retieve slice of results
   func (qs {{ $qSTypeName }}) All(ret *[]{{ .StructName }}) error {
     return qs.b.GetQuerySet().Find(ret).Error
   }
 
+	// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
+	// if nothing was fetched
 	func (qs {{ $qSTypeName }}) One(ret *{{ .StructName }}) error {
     return qs.b.GetQuerySet().First(ret).Error
   }

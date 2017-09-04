@@ -49,7 +49,11 @@ func writeQuerySetsToOutput(r io.Reader, pkgInfo *loader.PackageInfo, outFile st
 	if err != nil {
 		return fmt.Errorf("can't open out file: %s", err)
 	}
-	defer outF.Close()
+	defer func() {
+		if e := outF.Close(); e != nil {
+			log.Printf("can't close file: %s", e)
+		}
+	}()
 
 	const hdrTmpl = `package %s
   import (
