@@ -159,7 +159,7 @@ const qsCode = `
 
 	// {{ .Name }} is an queryset type for {{ .StructName }}
   type {{ .Name }} struct {
-    b base.Base
+	  db *gorm.DB
   }
 
   {{ $qSTypeName := .Name }}
@@ -173,13 +173,13 @@ const qsCode = `
 
 	// All is used to retieve slice of results
   func (qs {{ $qSTypeName }}) All(ret *[]{{ .StructName }}) error {
-    return qs.b.GetQuerySet().Find(ret).Error
+    return qs.db.Find(ret).Error
   }
 
 	// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
 	// if nothing was fetched
 	func (qs {{ $qSTypeName }}) One(ret *{{ .StructName }}) error {
-    return qs.b.GetQuerySet().First(ret).Error
+    return qs.db.First(ret).Error
   }
 
   // ===== END of query set {{ .Name }}
