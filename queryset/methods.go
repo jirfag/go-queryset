@@ -106,22 +106,32 @@ func (m noArgsMethod) GetArgsDeclaration() string {
 type fieldOperationNoArgsMethod struct {
 	onFieldMethod
 	noArgsMethod
-	gormMethodName string
+	gormMethodName     string
+	transformFieldName bool
 }
 
 func (m *fieldOperationNoArgsMethod) setGormMethodName(name string) {
 	m.gormMethodName = name
 }
 
+func (m *fieldOperationNoArgsMethod) setTransformFieldName(v bool) {
+	m.transformFieldName = v
+}
+
 // GetBody returns method body
 func (m fieldOperationNoArgsMethod) GetBody() string {
-	return m.wrapMethod(fmt.Sprintf(`return d.%s("%s")`, m.gormMethodName, gorm.ToDBName(m.fieldName)))
+	fieldName := m.fieldName
+	if m.transformFieldName {
+		fieldName = gorm.ToDBName(fieldName)
+	}
+	return m.wrapMethod(fmt.Sprintf(`return d.%s("%s")`, m.gormMethodName, fieldName))
 }
 
 func newFieldOperationNoArgsMethod(name, fieldName string) fieldOperationNoArgsMethod {
 	r := fieldOperationNoArgsMethod{
-		onFieldMethod:  newOnFieldMethod(name, fieldName),
-		gormMethodName: name,
+		onFieldMethod:      newOnFieldMethod(name, fieldName),
+		gormMethodName:     name,
+		transformFieldName: true,
 	}
 	r.setFieldNameFirst(false) // UserPreload -> PreloadUser
 	return r
@@ -217,7 +227,9 @@ func (m binaryFilterMethod) getWhereCondition() string {
 // Concrete methods
 
 func newPreloadMethod(fieldName string) fieldOperationNoArgsMethod {
-	return newFieldOperationNoArgsMethod("Preload", fieldName)
+	r := newFieldOperationNoArgsMethod("Preload", fieldName)
+	r.setTransformFieldName(false)
+	return r
 }
 
 func newOrderByMethod(fieldName string) fieldOperationNoArgsMethod {
