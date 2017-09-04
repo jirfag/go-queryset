@@ -162,6 +162,7 @@ const qsCode = `
 	  db *gorm.DB
   }
 
+  // New{{ .Name }} constructs new {{ .Name }}
   func New{{ .Name }}(db *gorm.DB) {{ .Name }} {
 	  return {{ .Name }}{
 		  db: db,
