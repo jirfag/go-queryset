@@ -33,7 +33,7 @@ func (m baseMethod) GetMethodName() string {
 }
 
 func (m baseMethod) wrapMethod(code string) string {
-	const tmpl = `qs.db.Scopes(func(d *gorm.DB) *gorm.DB {
+	const tmpl = `qs.db = qs.db.Scopes(func(d *gorm.DB) *gorm.DB {
       %s})
     return qs`
 	return fmt.Sprintf(tmpl, code)
