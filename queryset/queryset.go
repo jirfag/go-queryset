@@ -162,6 +162,12 @@ const qsCode = `
 	  db *gorm.DB
   }
 
+  func New{{ .Name }}(db *gorm.DB) {{ .Name }} {
+	  return {{ .Name }}{
+		  db: db,
+	  }
+  }
+
   {{ $qSTypeName := .Name }}
 
 	{{ range .Methods }}
