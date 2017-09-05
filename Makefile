@@ -3,6 +3,7 @@ test_static:
 		-e "parameter \w+ always receives" \
 		-e "/jinzhu/gorm/" \
 		-e "model is unused" \
+		-e '"expections" is a misspelling of "exceptions"' \
 		./...
 
 test_unit:
