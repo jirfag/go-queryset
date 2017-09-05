@@ -1,8 +1,15 @@
 package queryset
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -12,6 +19,10 @@ import (
 
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
+
+func fixedFullRe(s string) string {
+	return fmt.Sprintf("^%s$", regexp.QuoteMeta(s))
+}
 
 func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 	db, mock, err := sqlmock.New()
@@ -28,7 +39,22 @@ func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 	return mock, gormDB
 }
 
-var userFields = []string{"id", "name"}
+func getRowsForUsers(users []test.User) *sqlmock.Rows {
+	var userFieldNames = []string{"id", "name"}
+	rows := sqlmock.NewRows(userFieldNames)
+	for _, u := range users {
+		rows = rows.AddRow(u.ID, u.Name)
+	}
+	return rows
+}
+
+func getTestUsers(n int) (ret []test.User) {
+	for i := 0; i < n; i++ {
+		u := test.User{Model: test.Model{ID: i}, Name: fmt.Sprintf("name_%d", i)}
+		ret = append(ret, u)
+	}
+	return
+}
 
 func checkMock(t *testing.T, mock sqlmock.Sqlmock) {
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -36,17 +62,55 @@ func checkMock(t *testing.T, mock sqlmock.Sqlmock) {
 	}
 }
 
-func TestUserSelect(t *testing.T) {
-	m, db := newDB()
-	defer checkMock(t, m)
-	m.ExpectQuery(`SELECT \* FROM "users"`).
-		WillReturnRows(sqlmock.NewRows(userFields).AddRow(1, "name"))
+type testQueryFunc func(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB)
+
+func TestQueries(t *testing.T) {
+	funcs := []testQueryFunc{
+		testUserSelectAll,
+		testUserSelectAllNoRecords,
+		testUserSelectOne,
+	}
+	for _, f := range funcs {
+		f := f // save range var
+		funcName := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+		funcName = filepath.Ext(funcName)
+		funcName = strings.TrimPrefix(funcName, ".")
+		t.Run(funcName, func(t *testing.T) {
+			t.Parallel()
+			m, db := newDB()
+			defer checkMock(t, m)
+			f(t, m, db)
+		})
+	}
+}
+
+func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(2)
+	m.ExpectQuery(fixedFullRe(`SELECT * FROM "users"`)).
+		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
 	assert.Nil(t, test.NewUserQuerySet(db).All(&users))
-	assert.Len(t, users, 1)
-	assert.Equal(t, 1, users[0].ID)
-	assert.Equal(t, "name", users[0].Name)
+	assert.Equal(t, expUsers, users)
+}
+
+func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	m.ExpectQuery(fixedFullRe(`SELECT * FROM "users"`)).
+		WillReturnError(sql.ErrNoRows)
+
+	var users []test.User
+	assert.Error(t, gorm.ErrRecordNotFound, test.NewUserQuerySet(db).All(&users))
+	assert.Len(t, users, 0)
+}
+
+func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(1)
+	m.ExpectQuery(fixedFullRe(`SELECT * FROM "users" ORDER BY "users"."id" ASC LIMIT 1`)).
+		WillReturnRows(getRowsForUsers(expUsers))
+
+	var user test.User
+	assert.Nil(t, test.NewUserQuerySet(db).One(&user))
+	assert.Equal(t, expUsers[0], user)
 }
 
 func TestMain(m *testing.M) {
