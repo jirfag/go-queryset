@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"go/ast"
 	"io/ioutil"
 	"log"
 	"os"
@@ -213,7 +212,7 @@ func TestGetStructsInFile(t *testing.T) {
 			expectedStructFields: []string{"F", "ID"},
 			expectedStructsCount: 2,
 		},
-		{
+		{ // test local reordered embedding
 			code: `package p
 				type T struct {
 					m
@@ -222,8 +221,32 @@ func TestGetStructsInFile(t *testing.T) {
 				type m struct {
 					ID int
 				}`,
-			expectedStructFields: []string{"F"}, // TODO: support local reordered embedding
+			expectedStructFields: []string{"F", "ID"},
 			expectedStructsCount: 2,
+		},
+		{ // test another package imported embedding
+			code: `package p
+				import "github.com/jinzhu/gorm"
+				type T struct {
+					gorm.Model
+					F int
+				}`,
+			expectedStructFields: []string{"ID", "CreatedAt", "UpdatedAt", "DeletedAt", "F"},
+		},
+		{
+			code: `package p
+			type MyType int`,
+		},
+		{
+			code: `package p
+				type m struct {
+				}
+
+				type T struct {
+					m
+					F int
+				}`,
+			expectedStructFields: []string{"F"},
 		},
 	}
 
@@ -255,28 +278,28 @@ func testStructFields(t *testing.T, tc structFieldsCase) {
 		return
 	}
 
-	var tInfo ast.TypeSpec
+	var typeName string
 
-	for structInfo := range structs {
-		if structInfo.Name.Name == "T" {
-			tInfo = structInfo
+	for structTypeName := range structs {
+		if structTypeName == "T" {
+			typeName = structTypeName
 			break
 		}
 	}
-	assert.NotNil(t, tInfo.Name)
+	assert.NotNil(t, typeName)
 
-	fields := structs[tInfo]
+	s := structs[typeName]
 	fieldNames := []string{}
-	for _, field := range fields {
-		assert.NotNil(t, field.Name)
-		fieldNames = append(fieldNames, field.Name.Name)
+	for _, field := range s.Fields {
+		assert.NotEmpty(t, field.Name)
+		fieldNames = append(fieldNames, field.Name)
 	}
 	assert.Len(t, fieldNames, len(tc.expectedStructFields))
 
 	if tc.expectedDoc != nil {
 		docLines := []string{}
-		assert.NotNil(t, tInfo.Doc)
-		for _, docLine := range tInfo.Doc.List {
+		assert.NotNil(t, s.Doc)
+		for _, docLine := range s.Doc.List {
 			docLines = append(docLines, docLine.Text)
 		}
 		assert.Equal(t, tc.expectedDoc, docLines)

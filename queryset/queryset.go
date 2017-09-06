@@ -75,8 +75,17 @@ func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ fmt.String
 		}
 		return getMethodsForField(pkgInfo, name, t.Underlying(), originalTypeName)
 	case *types.Pointer:
-		// Pointer usually used for assocations => preload them
-		return []method{newPreloadMethod(name)}
+		if _, ok := t.Elem().Underlying().(*types.Struct); ok {
+			if t.Underlying().String() == "*time.Time" {
+				// XXX: maybe check struct tags?
+				return nil
+			}
+
+			// Pointer usually used for assocations => preload them
+			return []method{newPreloadMethod(name)}
+		}
+		// don't generate preloaders for usual pointers like DeletedAt *time.Time
+		return nil
 	default:
 		// no filtering is needed
 		return nil
@@ -86,7 +95,7 @@ func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ fmt.String
 func getQuerySetFieldMethods(pkgInfo *loader.PackageInfo, fields []parser.StructField) []method {
 	ret := []method{}
 	for _, f := range fields {
-		methods := getMethodsForField(pkgInfo, f.Name.Name, f.Type.Type, "")
+		methods := getMethodsForField(pkgInfo, f.Name, f.Type, "")
 		ret = append(ret, methods...)
 	}
 
@@ -98,8 +107,8 @@ func getQuerySetFieldMethods(pkgInfo *loader.PackageInfo, fields []parser.Struct
 func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
 	querySetStructConfigs := querySetStructConfigSlice{}
 
-	for structType, structFields := range structs {
-		doc := structType.Doc
+	for structTypeName, ps := range structs {
+		doc := ps.Doc
 		if doc == nil {
 			continue
 		}
@@ -118,10 +127,9 @@ func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.Par
 			continue
 		}
 
-		structTypeName := structType.Name.Name
 		methods := []method{newLimitMethod(), newAllMethod(structTypeName),
 			newOneMethod(structTypeName)}
-		fieldMethods := getQuerySetFieldMethods(pkgInfo, structFields)
+		fieldMethods := getQuerySetFieldMethods(pkgInfo, ps.Fields)
 		methods = append(methods, fieldMethods...)
 
 		qsConfig := querySetStructConfig{
