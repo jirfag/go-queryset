@@ -34,3 +34,17 @@ type Post struct {
 	User  User
 	Title string
 }
+
+// String is just for testing purposes
+func (p *Post) String() string {
+	return ""
+}
+
+// SomeMethod is just for testing purposes
+func (b *Blog) SomeMethod() string {
+	if b.ID%2 == 0 {
+		return "1"
+	}
+
+	return "0"
+}

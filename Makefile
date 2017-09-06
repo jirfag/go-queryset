@@ -9,4 +9,7 @@ test_static:
 test_unit:
 	 go test -v ./...
 
-test: test_unit test_static
+test: test_unit bench test_static
+
+bench:
+	go test -bench=. -benchtime=5s -v -run=^$$ ./...

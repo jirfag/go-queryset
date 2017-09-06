@@ -119,9 +119,16 @@ func fileNameToPkgName(filePath string) string {
 		fmt.Sprintf("%s/src/", os.Getenv("GOPATH")))
 }
 
+func typeCheckFuncBodies(path string) bool {
+	return false // don't type-check func bodies to speedup parsing
+}
+
 func loadProgramFromPackage(pkgFullName string) (*loader.Program, error) {
 	// The loader loads a complete Go program from source code.
-	conf := loader.Config{ParserMode: parser.ParseComments}
+	conf := loader.Config{
+		ParserMode:          parser.ParseComments,
+		TypeCheckFuncBodies: typeCheckFuncBodies,
+	}
 	conf.Import(pkgFullName)
 	lprog, err := conf.Load()
 	if err != nil {
