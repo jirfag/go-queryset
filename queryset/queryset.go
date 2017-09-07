@@ -55,37 +55,38 @@ func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ fmt.String
 		newBinaryFilterMethod("eq", name, typeName),
 		newBinaryFilterMethod("ne", name, typeName),
 	}
+	numericMethods := []method{newBinaryFilterMethod("lt", name, typeName),
+		newBinaryFilterMethod("gt", name, typeName),
+		newBinaryFilterMethod("lte", name, typeName),
+		newBinaryFilterMethod("gte", name, typeName),
+		newOrderByMethod(name)}
 	switch t := typ.(type) {
 	case *types.Basic:
 		if t.Info()&types.IsNumeric != 0 {
-			return append(basicTypeMethods,
-				newBinaryFilterMethod("lt", name, typeName),
-				newBinaryFilterMethod("gt", name, typeName),
-				newBinaryFilterMethod("lte", name, typeName),
-				newBinaryFilterMethod("gte", name, typeName),
-				newOrderByMethod(name))
+			return append(basicTypeMethods, numericMethods...)
 		}
 		// it's a string
 		return basicTypeMethods
 	case *types.Named:
-		originalTypeName := t.Obj().Name()
+		otn := t.Obj().Name()
 		if t.Obj().Pkg() != pkgInfo.Pkg {
-			originalTypeName = fmt.Sprintf("%s.%s", t.Obj().Pkg().Name(),
-				originalTypeName)
-		}
-		return getMethodsForField(pkgInfo, name, t.Underlying(), originalTypeName)
-	case *types.Pointer:
-		if _, ok := t.Elem().Underlying().(*types.Struct); ok {
-			if t.Underlying().String() == "*time.Time" {
-				// XXX: maybe check struct tags?
-				return nil
+			if originalTypeName != "" {
+				otn = fmt.Sprintf("%s.%s", t.Obj().Pkg().Name(), originalTypeName)
+			} else {
+				otn = typ.String()
 			}
-
-			// Pointer usually used for assocations => preload them
-			return []method{newPreloadMethod(name)}
 		}
-		// don't generate preloaders for usual pointers like DeletedAt *time.Time
-		return nil
+		return getMethodsForField(pkgInfo, name, t.Underlying(), otn)
+	case *types.Struct:
+		if originalTypeName == "time.Time" {
+			return append(basicTypeMethods, numericMethods...)
+		}
+
+		// Association was found (any struct or struct pointer)
+		return []method{newPreloadMethod(name)}
+	case *types.Pointer:
+		ptrMethods := getMethodsForField(pkgInfo, name, t.Elem(), "")
+		return append(ptrMethods, newIsNullMethod(name))
 	default:
 		// no filtering is needed
 		return nil

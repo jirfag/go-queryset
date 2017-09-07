@@ -31,7 +31,7 @@ func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 		log.Fatalf("can't create sqlmock: %s", err)
 	}
 
-	gormDB, gerr := gorm.Open("sqlite", db)
+	gormDB, gerr := gorm.Open("mysql", db)
 	if gerr != nil {
 		log.Fatalf("can't open gorm connection: %s", err)
 	}
@@ -94,7 +94,7 @@ func TestQueries(t *testing.T) {
 
 func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(2)
-	m.ExpectQuery(fixedFullRe(`SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL`)).
+	m.ExpectQuery(fixedFullRe("SELECT * FROM `users`  WHERE `users`.`deleted_at` IS NULL")).
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
@@ -103,7 +103,7 @@ func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 }
 
 func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
-	m.ExpectQuery(fixedFullRe(`SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL`)).
+	m.ExpectQuery(fixedFullRe("SELECT * FROM `users`  WHERE `users`.`deleted_at` IS NULL")).
 		WillReturnError(sql.ErrNoRows)
 
 	var users []test.User
@@ -113,8 +113,7 @@ func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(1)
-	req := `SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL ` +
-		`ORDER BY "users"."id" ASC LIMIT 1`
+	req := "SELECT * FROM `users`  WHERE `users`.`deleted_at` IS NULL ORDER BY `users`.`id` ASC LIMIT 1"
 	m.ExpectQuery(fixedFullRe(req)).
 		WillReturnRows(getRowsForUsers(expUsers))
 

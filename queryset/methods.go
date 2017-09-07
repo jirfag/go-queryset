@@ -258,6 +258,31 @@ func (m binaryFilterMethod) getWhereCondition() string {
 	return fmt.Sprintf("%s ?", op)
 }
 
+// unaryFilerMethod
+
+type unaryFilterMethod struct {
+	onFieldMethod
+	noArgsMethod
+	op string
+}
+
+func newUnaryFilterMethod(name, fieldName, op string) unaryFilterMethod {
+	r := unaryFilterMethod{
+		onFieldMethod: newOnFieldMethod(name, fieldName),
+		op:            op,
+	}
+	r.setFieldNameFirst(true)
+	return r
+}
+
+// GetBody returns method's code
+func (m unaryFilterMethod) GetBody() string {
+	return m.wrapMethod(fmt.Sprintf(`return d.Where("%s %s")`,
+		gorm.ToDBName(m.fieldName), m.op))
+}
+
+// unaryFilerMethod
+
 // queryMethod
 
 type queryMethod struct {
@@ -311,4 +336,8 @@ func newOneMethod(structName string) queryMethod {
 	// if nothing was fetched`
 	r.setDoc(doc)
 	return r
+}
+
+func newIsNullMethod(fieldName string) unaryFilterMethod {
+	return newUnaryFilterMethod("IsNull", fieldName, "IS NULL")
 }
