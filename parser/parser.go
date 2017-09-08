@@ -139,6 +139,11 @@ func parseStruct(s *types.Struct, decl *ast.GenDecl) *ParsedStruct {
 	var fields []StructField
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
+		if _, ok := f.Type().Underlying().(*types.Interface); ok {
+			// skip interfaces
+			continue
+		}
+
 		if f.Anonymous() {
 			e := f.Type().Underlying().(*types.Struct)
 			pe := parseStruct(e, nil)
