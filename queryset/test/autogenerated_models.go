@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -323,6 +324,62 @@ func (qs BlogQuerySet) UpdatedAtNe(updatedAt time.Time) BlogQuerySet {
 }
 
 // ===== END of query set BlogQuerySet
+
+// ===== BEGIN of Blog modifiers
+
+// Create creates Blog
+func (o *Blog) Create(db *gorm.DB) error {
+	if err := db.Create(o).Error; err != nil {
+		return fmt.Errorf("can't create Blog %v: %s", o, err)
+	}
+
+	return nil
+}
+
+type blogDBSchemaField string
+
+var BlogDBSchema = struct {
+	ID        blogDBSchemaField
+	CreatedAt blogDBSchemaField
+	UpdatedAt blogDBSchemaField
+	DeletedAt blogDBSchemaField
+	Name      blogDBSchemaField
+}{
+
+	ID:        blogDBSchemaField("id"),
+	CreatedAt: blogDBSchemaField("created_at"),
+	UpdatedAt: blogDBSchemaField("updated_at"),
+	DeletedAt: blogDBSchemaField("deleted_at"),
+	Name:      blogDBSchemaField("name"),
+}
+
+// Update updates Blog fields by primary key
+func (o *Blog) Update(db *gorm.DB, fields ...blogDBSchemaField) error {
+	dbNameToFieldName := map[string]interface{}{
+		"id":         o.ID,
+		"created_at": o.CreatedAt,
+		"updated_at": o.UpdatedAt,
+		"deleted_at": o.DeletedAt,
+		"name":       o.Name,
+	}
+	u := map[string]interface{}{}
+	for _, f := range fields {
+		fs := string(f)
+		u[fs] = dbNameToFieldName[fs]
+	}
+	if err := db.Model(o).Updates(u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return err
+		}
+
+		return fmt.Errorf("can't update Blog %v fields %v: %s",
+			o, fields, err)
+	}
+
+	return nil
+}
+
+// ===== END of Blog modifiers
 
 // ===== BEGIN of query set PostQuerySet
 
@@ -667,6 +724,68 @@ func (qs PostQuerySet) UpdatedAtNe(updatedAt time.Time) PostQuerySet {
 
 // ===== END of query set PostQuerySet
 
+// ===== BEGIN of Post modifiers
+
+// Create creates Post
+func (o *Post) Create(db *gorm.DB) error {
+	if err := db.Create(o).Error; err != nil {
+		return fmt.Errorf("can't create Post %v: %s", o, err)
+	}
+
+	return nil
+}
+
+type postDBSchemaField string
+
+var PostDBSchema = struct {
+	ID        postDBSchemaField
+	CreatedAt postDBSchemaField
+	UpdatedAt postDBSchemaField
+	DeletedAt postDBSchemaField
+	Blog      postDBSchemaField
+	User      postDBSchemaField
+	Title     postDBSchemaField
+}{
+
+	ID:        postDBSchemaField("id"),
+	CreatedAt: postDBSchemaField("created_at"),
+	UpdatedAt: postDBSchemaField("updated_at"),
+	DeletedAt: postDBSchemaField("deleted_at"),
+	Blog:      postDBSchemaField("blog"),
+	User:      postDBSchemaField("user"),
+	Title:     postDBSchemaField("title"),
+}
+
+// Update updates Post fields by primary key
+func (o *Post) Update(db *gorm.DB, fields ...postDBSchemaField) error {
+	dbNameToFieldName := map[string]interface{}{
+		"id":         o.ID,
+		"created_at": o.CreatedAt,
+		"updated_at": o.UpdatedAt,
+		"deleted_at": o.DeletedAt,
+		"blog":       o.Blog,
+		"user":       o.User,
+		"title":      o.Title,
+	}
+	u := map[string]interface{}{}
+	for _, f := range fields {
+		fs := string(f)
+		u[fs] = dbNameToFieldName[fs]
+	}
+	if err := db.Model(o).Updates(u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return err
+		}
+
+		return fmt.Errorf("can't update Post %v fields %v: %s",
+			o, fields, err)
+	}
+
+	return nil
+}
+
+// ===== END of Post modifiers
+
 // ===== BEGIN of query set UserQuerySet
 
 // UserQuerySet is an queryset type for User
@@ -982,5 +1101,61 @@ func (qs UserQuerySet) UpdatedAtNe(updatedAt time.Time) UserQuerySet {
 }
 
 // ===== END of query set UserQuerySet
+
+// ===== BEGIN of User modifiers
+
+// Create creates User
+func (o *User) Create(db *gorm.DB) error {
+	if err := db.Create(o).Error; err != nil {
+		return fmt.Errorf("can't create User %v: %s", o, err)
+	}
+
+	return nil
+}
+
+type userDBSchemaField string
+
+var UserDBSchema = struct {
+	ID        userDBSchemaField
+	CreatedAt userDBSchemaField
+	UpdatedAt userDBSchemaField
+	DeletedAt userDBSchemaField
+	Name      userDBSchemaField
+}{
+
+	ID:        userDBSchemaField("id"),
+	CreatedAt: userDBSchemaField("created_at"),
+	UpdatedAt: userDBSchemaField("updated_at"),
+	DeletedAt: userDBSchemaField("deleted_at"),
+	Name:      userDBSchemaField("name"),
+}
+
+// Update updates User fields by primary key
+func (o *User) Update(db *gorm.DB, fields ...userDBSchemaField) error {
+	dbNameToFieldName := map[string]interface{}{
+		"id":         o.ID,
+		"created_at": o.CreatedAt,
+		"updated_at": o.UpdatedAt,
+		"deleted_at": o.DeletedAt,
+		"name":       o.Name,
+	}
+	u := map[string]interface{}{}
+	for _, f := range fields {
+		fs := string(f)
+		u[fs] = dbNameToFieldName[fs]
+	}
+	if err := db.Model(o).Updates(u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return err
+		}
+
+		return fmt.Errorf("can't update User %v fields %v: %s",
+			o, fields, err)
+	}
+
+	return nil
+}
+
+// ===== END of User modifiers
 
 // ===== END of all query sets

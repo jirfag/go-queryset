@@ -11,13 +11,15 @@ import (
 
 	"golang.org/x/tools/go/loader"
 
+	"github.com/jinzhu/gorm"
 	"github.com/jirfag/go-queryset/parser"
 )
 
 var qsTmpl = template.Must(
 	template.New("generator").
 		Funcs(template.FuncMap{
-			"title": strings.Title,
+			"lcf":      lowercaseFirstRune,
+			"todbname": gorm.ToDBName,
 		}).
 		Parse(qsCode),
 )
@@ -26,6 +28,7 @@ type querySetStructConfig struct {
 	StructName string
 	Name       string
 	Methods    methodsSlice
+	Fields     []parser.StructField
 }
 
 type methodsSlice []method
@@ -137,6 +140,7 @@ func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.Par
 			StructName: structTypeName,
 			Name:       structTypeName + "QuerySet",
 			Methods:    methods,
+			Fields:     ps.Fields,
 		}
 		sort.Sort(qsConfig.Methods)
 		querySetStructConfigs = append(querySetStructConfigs, qsConfig)
@@ -191,6 +195,56 @@ const qsCode = `
 	{{ end }}
 
   // ===== END of query set {{ .Name }}
+
+	// ===== BEGIN of {{ .StructName }} modifiers
+
+	// Create creates {{ .StructName }}
+	func (o *{{ .StructName }}) Create(db *gorm.DB) error {
+		if err := db.Create(o).Error; err != nil {
+			return fmt.Errorf("can't create {{ .StructName }} %v: %s", o, err)
+		}
+
+		return nil
+	}
+
+	{{ $ft := printf "%s%s" .StructName "DBSchemaField" | lcf }}
+	type {{ $ft }} string
+
+	var {{ .StructName }}DBSchema = struct {
+		{{ range .Fields }}
+			{{ .Name }} {{ $ft }}
+		{{- end }}
+	}{
+		{{ range .Fields }}
+			{{ .Name }}: {{ $ft }}("{{ .Name | todbname }}"),
+		{{- end }}
+	}
+
+	// Update updates {{ .StructName }} fields by primary key
+	func (o *{{ .StructName }}) Update(db *gorm.DB, fields ...{{ $ft }}) error {
+		dbNameToFieldName := map[string]interface{}{
+			{{- range .Fields }}
+				"{{ .Name | todbname }}": o.{{ .Name }},
+			{{- end }}
+		}
+		u := map[string]interface{}{}
+		for _, f := range fields {
+			fs := string(f)
+			u[fs] = dbNameToFieldName[fs]
+		}
+		if err := db.Model(o).Updates(u).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return err
+			}
+
+			return fmt.Errorf("can't update {{ .StructName }} %v fields %v: %s",
+				o, fields, err)
+		}
+
+		return nil
+	}
+
+	// ===== END of {{ .StructName }} modifiers
 {{ end }}
 
 // ===== END of all query sets

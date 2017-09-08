@@ -283,25 +283,25 @@ func (m unaryFilterMethod) GetBody() string {
 
 // unaryFilerMethod
 
-// queryMethod
+// modelMethod
 
-type queryMethod struct {
+type modelMethod struct {
 	baseMethod
 	oneArgMethod
 	configurableGormMethod
 }
 
-func (m queryMethod) GetBody() string {
+func (m modelMethod) GetBody() string {
 	return fmt.Sprintf("return qs.db.%s(%s).Error",
 		m.getGormMethodName(), m.getArgName())
 }
 
-func (m queryMethod) GetReturnValuesDeclaration(string) string {
+func (m modelMethod) GetReturnValuesDeclaration(string) string {
 	return "error"
 }
 
-func newQueryMethod(name, gormName, argTypeName string) queryMethod {
-	return queryMethod{
+func newModelMethod(name, gormName, argTypeName string) modelMethod {
+	return modelMethod{
 		baseMethod:             newBaseMethod(name),
 		oneArgMethod:           newOneArgMethod("ret", argTypeName),
 		configurableGormMethod: newConfigurableGormMethod(gormName),
@@ -326,12 +326,12 @@ func newLimitMethod() structOperationOneArgMethod {
 	return newStructOperationOneArgMethod("Limit", "int")
 }
 
-func newAllMethod(structName string) queryMethod {
-	return newQueryMethod("All", "Find", fmt.Sprintf("*[]%s", structName))
+func newAllMethod(structName string) modelMethod {
+	return newModelMethod("All", "Find", fmt.Sprintf("*[]%s", structName))
 }
 
-func newOneMethod(structName string) queryMethod {
-	r := newQueryMethod("One", "First", fmt.Sprintf("*%s", structName))
+func newOneMethod(structName string) modelMethod {
+	r := newModelMethod("One", "First", fmt.Sprintf("*%s", structName))
 	const doc = `// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
 	// if nothing was fetched`
 	r.setDoc(doc)

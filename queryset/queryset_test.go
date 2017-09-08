@@ -2,8 +2,10 @@ package queryset
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -64,6 +66,22 @@ func getTestUsers(n int) (ret []test.User) {
 	return
 }
 
+func getUserNoID() test.User {
+	return test.User{
+		Model: gorm.Model{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		Name: fmt.Sprintf("name_rand_%d", rand.Int()),
+	}
+}
+
+func getUser() test.User {
+	u := getUserNoID()
+	u.ID = uint(rand.Int())
+	return u
+}
+
 func checkMock(t *testing.T, mock sqlmock.Sqlmock) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expections: %s", err)
@@ -77,6 +95,8 @@ func TestQueries(t *testing.T) {
 		testUserSelectAll,
 		testUserSelectAllNoRecords,
 		testUserSelectOne,
+		testUserCreateOne,
+		testUserUpdateFiledsByPK,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -120,6 +140,27 @@ func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	var user test.User
 	assert.Nil(t, test.NewUserQuerySet(db).One(&user))
 	assert.Equal(t, expUsers[0], user)
+}
+
+func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	u := getUserNoID()
+	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`) VALUES (?,?,?,?)"
+	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), u.Name}
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(args...).
+		WillReturnResult(sqlmock.NewResult(2, 1))
+	assert.Nil(t, u.Create(db))
+	assert.Equal(t, uint(2), u.ID)
+}
+
+func testUserUpdateFiledsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	u := getUser()
+	req := "UPDATE `users` SET `name` = ?, `updated_at` = ? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(u.Name, sqlmock.AnyArg(), u.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	assert.Nil(t, u.Update(db, test.UserDBSchema.Name))
 }
 
 func TestMain(m *testing.M) {
