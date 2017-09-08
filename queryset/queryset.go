@@ -73,11 +73,8 @@ func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ fmt.String
 	case *types.Named:
 		otn := t.Obj().Name()
 		if t.Obj().Pkg() != pkgInfo.Pkg {
-			if originalTypeName != "" {
-				otn = fmt.Sprintf("%s.%s", t.Obj().Pkg().Name(), originalTypeName)
-			} else {
-				otn = typ.String()
-			}
+			parts := strings.Split(typ.String(), "/")
+			otn = parts[len(parts)-1]
 		}
 		return getMethodsForField(pkgInfo, name, t.Underlying(), otn)
 	case *types.Struct:
