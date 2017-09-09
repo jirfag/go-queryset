@@ -6,6 +6,8 @@ go:
 before_install:
   - go get golang.org/x/tools/cmd/goimports
   - go get github.com/mattn/goveralls
+  - go get -u github.com/alecthomas/gometalinter
+  - gometalinter --install --vendored-linters
 script:
   - make test
   - $HOME/gopath/bin/goveralls -service=travis-ci
