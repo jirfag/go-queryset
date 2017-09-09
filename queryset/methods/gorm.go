@@ -3,9 +3,7 @@ package methods
 import "fmt"
 
 func wrapToGormScope(code string) string {
-	const tmpl = `qs.db = qs.db.Scopes(func(d *gorm.DB) *gorm.DB {
-      %s})
-    return qs`
+	const tmpl = `return qs.w(%s)`
 	return fmt.Sprintf(tmpl, code)
 }
 
@@ -33,7 +31,7 @@ func (m *callGormMethod) getGormVarName() string {
 }
 
 func (m callGormMethod) GetBody() string {
-	return fmt.Sprintf("return %s.%s(%s)",
+	return fmt.Sprintf("%s.%s(%s)",
 		m.getGormVarName(), m.getGormMethodName(), m.getGormMethodArgs())
 }
 
@@ -65,7 +63,7 @@ type gormErroredMethod struct {
 
 // GetBody returns body of method
 func (m gormErroredMethod) GetBody() string {
-	return m.callGormMethod.GetBody() + ".Error"
+	return "return " + m.callGormMethod.GetBody() + ".Error"
 }
 
 func newGormErroredMethod(name, args, varName string) gormErroredMethod {

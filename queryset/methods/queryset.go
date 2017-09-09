@@ -63,7 +63,7 @@ func newFieldOperationNoArgsMethod(name, fieldName, qsTypeName string,
 
 	r := FieldOperationNoArgsMethod{
 		onFieldMethod:      newOnFieldMethod(name, fieldName),
-		callGormMethod:     newCallGormMethod(name, gormArgName, "d"),
+		callGormMethod:     newCallGormMethod(name, gormArgName, "qs.db"),
 		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
 		retQuerySetMethod:  newRetQuerySetMethod(qsTypeName),
 	}
@@ -80,7 +80,7 @@ type fieldOperationOneArgMethod struct {
 
 // GetBody returns method body
 func (m fieldOperationOneArgMethod) GetBody() string {
-	return wrapToGormScope(fmt.Sprintf(`return d.%s(%s)`, m.name, m.getArgName()))
+	return wrapToGormScope(fmt.Sprintf(`return qs.db..%s(%s)`, m.name, m.getArgName()))
 }
 
 // LowercaseFirstRune lowercases first rune of string
@@ -115,7 +115,7 @@ type StructOperationOneArgMethod struct {
 
 // GetBody returns method body
 func (m StructOperationOneArgMethod) GetBody() string {
-	return wrapToGormScope(fmt.Sprintf(`return d.%s(%s)`, m.name, m.getArgName()))
+	return wrapToGormScope(fmt.Sprintf(`qs.db.%s(%s)`, m.name, m.getArgName()))
 }
 
 func newStructOperationOneArgMethod(name, argTypeName, qsTypeName string) StructOperationOneArgMethod {
@@ -146,7 +146,7 @@ func NewBinaryFilterMethod(name, fieldName, argTypeName, qsTypeName string) Bina
 
 // GetBody returns method's code
 func (m BinaryFilterMethod) GetBody() string {
-	return wrapToGormScope(fmt.Sprintf(`return d.Where("%s %s", %s)`,
+	return wrapToGormScope(fmt.Sprintf(`qs.db.Where("%s %s", %s)`,
 		gorm.ToDBName(m.fieldName), m.getWhereCondition(), m.getArgName()))
 }
 
@@ -189,7 +189,7 @@ func newUnaryFilterMethod(name, fieldName, op, qsTypeName string) UnaryFilterMet
 
 // GetBody returns method's code
 func (m UnaryFilterMethod) GetBody() string {
-	return wrapToGormScope(fmt.Sprintf(`return d.Where("%s %s")`,
+	return wrapToGormScope(fmt.Sprintf(`qs.db.Where("%s %s")`,
 		gorm.ToDBName(m.fieldName), m.op))
 }
 

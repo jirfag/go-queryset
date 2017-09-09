@@ -301,6 +301,10 @@ const qsCode = `
 	  }
   }
 
+	func (qs {{ .Name }}) w(db *gorm.DB) {{ .Name }} {
+	  return New{{ .Name }}(db)
+  }
+
 	{{ range .Methods }}
 		{{ .GetDoc .GetMethodName }}
 		func ({{ .GetReceiverDeclaration }}) {{ .GetMethodName }}({{ .GetArgsDeclaration }})
