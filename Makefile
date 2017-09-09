@@ -16,4 +16,5 @@ bench:
 	go test -bench=. -benchtime=1s -v -run=^$$ ./queryset/
 
 gen:
-	 go generate ./queryset/test/
+	 go generate ./queryset/test
+	 go generate ./examples/comparison/gorm4
