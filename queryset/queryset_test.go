@@ -39,7 +39,7 @@ func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 	}
 	gormDB.LogMode(true)
 
-	return mock, gormDB
+	return mock, gormDB.Set("gorm:update_column", true)
 }
 
 func getRowsForUsers(users []test.User) *sqlmock.Rows {
@@ -161,9 +161,9 @@ func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserUpdateByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET `name` = ?, `updated_at` = ? WHERE `users`.`deleted_at` IS NULL AND ((email = ?))"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.`deleted_at` IS NULL AND ((email = ?))"
 	m.ExpectExec(fixedFullRe(req)).
-		WithArgs(u.Name, sqlmock.AnyArg(), u.Email).
+		WithArgs(u.Name, u.Email).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err := test.NewUserQuerySet(db).
@@ -176,9 +176,9 @@ func testUserUpdateByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserUpdateFieldsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET `name` = ?, `updated_at` = ? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
 	m.ExpectExec(fixedFullRe(req)).
-		WithArgs(u.Name, sqlmock.AnyArg(), u.ID).
+		WithArgs(u.Name, u.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	assert.Nil(t, u.Update(db, test.UserDBSchema.Name))
