@@ -258,10 +258,19 @@ func NewPreloadMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
 	return r
 }
 
-// NewOrderByMethod creates new OrderBy method
-func NewOrderByMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod("OrderBy", fieldName, qsTypeName, true)
+// NewOrderAscByMethod creates new OrderBy method ascending
+func NewOrderAscByMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
+	r := newFieldOperationNoArgsMethod("OrderAscBy", fieldName, qsTypeName, true)
 	r.setGormMethodName("Order")
+	r.setGormMethodArgs(fmt.Sprintf(`"%s ASC"`, gorm.ToDBName(fieldName)))
+	return r
+}
+
+// NewOrderDescByMethod creates new OrderBy method descending
+func NewOrderDescByMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
+	r := newFieldOperationNoArgsMethod("OrderDescBy", fieldName, qsTypeName, true)
+	r.setGormMethodName("Order")
+	r.setGormMethodArgs(fmt.Sprintf(`"%s DESC"`, gorm.ToDBName(fieldName)))
 	return r
 }
 

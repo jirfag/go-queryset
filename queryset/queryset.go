@@ -78,7 +78,9 @@ func getQuerySetMethodsForField(f fieldInfo, qsTypeName string) []methods.Method
 		methods.NewBinaryFilterMethod("gt", f.name, f.typeName, qsTypeName),
 		methods.NewBinaryFilterMethod("lte", f.name, f.typeName, qsTypeName),
 		methods.NewBinaryFilterMethod("gte", f.name, f.typeName, qsTypeName),
-		methods.NewOrderByMethod(f.name, qsTypeName)}
+		methods.NewOrderAscByMethod(f.name, qsTypeName),
+		methods.NewOrderDescByMethod(f.name, qsTypeName),
+	}
 
 	if f.isNumeric {
 		return append(basicTypeMethods, numericMethods...)

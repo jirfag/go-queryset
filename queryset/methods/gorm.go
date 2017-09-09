@@ -18,15 +18,19 @@ func (m *callGormMethod) setGormMethodName(name string) {
 	m.gormMethodName = name
 }
 
-func (m *callGormMethod) getGormMethodName() string {
+func (m callGormMethod) getGormMethodName() string {
 	return m.gormMethodName
 }
 
-func (m *callGormMethod) getGormMethodArgs() string {
+func (m callGormMethod) getGormMethodArgs() string {
 	return m.gormMethodArgs
 }
 
-func (m *callGormMethod) getGormVarName() string {
+func (m *callGormMethod) setGormMethodArgs(args string) {
+	m.gormMethodArgs = args
+}
+
+func (m callGormMethod) getGormVarName() string {
 	return m.gormVarName
 }
 
