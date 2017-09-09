@@ -12,7 +12,7 @@ func getGormDB() *gorm.DB {
 	return db
 }
 
-//go:generate go run ../../../goqueryset.go -in gorm4.go
+//go:generate go run ../../../cmd/goqueryset/goqueryset.go -in gorm4.go
 
 // User struct represents user model.
 // gen:qs

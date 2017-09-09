@@ -5,7 +5,7 @@ import (
 	"github.com/jirfag/go-queryset/queryset/tmp"
 )
 
-//go:generate go run ../../goqueryset.go -in models.go
+//go:generate go run ../../cmd/goqueryset/goqueryset.go -in models.go
 
 // User is a usual user
 // gen:qs
