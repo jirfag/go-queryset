@@ -47,60 +47,134 @@ func (s querySetStructConfigSlice) Less(i, j int) bool {
 }
 func (s querySetStructConfigSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func getMethodsForField(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringer, originalTypeName string) []method {
+type baseFieldInfo struct {
+	name      string // name of field
+	typeName  string // name of type of field
+	isStruct  bool
+	isNumeric bool
+}
+
+type fieldInfo struct {
+	baseFieldInfo
+	pointed   *baseFieldInfo
+	isPointer bool
+}
+
+func (fi fieldInfo) getPointed() fieldInfo {
+	return fieldInfo{
+		baseFieldInfo: *fi.pointed,
+	}
+}
+
+func getQuerySetMethodsForField(f fieldInfo) []method {
+	basicTypeMethods := []method{
+		newBinaryFilterMethod("eq", f.name, f.typeName),
+		newBinaryFilterMethod("ne", f.name, f.typeName),
+	}
+	numericMethods := []method{
+		newBinaryFilterMethod("lt", f.name, f.typeName),
+		newBinaryFilterMethod("gt", f.name, f.typeName),
+		newBinaryFilterMethod("lte", f.name, f.typeName),
+		newBinaryFilterMethod("gte", f.name, f.typeName),
+		newOrderByMethod(f.name)}
+
+	if f.isNumeric {
+		return append(basicTypeMethods, numericMethods...)
+	}
+
+	if f.isStruct {
+		// Association was found (any struct or struct pointer)
+		return []method{newPreloadMethod(f.name)}
+	}
+
+	if f.isPointer {
+		ptrMethods := getQuerySetMethodsForField(f.getPointed())
+		return append(ptrMethods, newIsNullMethod(f.name))
+	}
+
+	// it's a string
+	return basicTypeMethods
+}
+
+func generateFieldInfo(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringer, originalTypeName string) *fieldInfo {
 	typeName := typ.String()
 	if originalTypeName != "" {
 		// it's needed to preserver typedef's original name
 		typeName = originalTypeName
 	}
 
-	basicTypeMethods := []method{
-		newBinaryFilterMethod("eq", name, typeName),
-		newBinaryFilterMethod("ne", name, typeName),
-	}
-	numericMethods := []method{newBinaryFilterMethod("lt", name, typeName),
-		newBinaryFilterMethod("gt", name, typeName),
-		newBinaryFilterMethod("lte", name, typeName),
-		newBinaryFilterMethod("gte", name, typeName),
-		newOrderByMethod(name)}
 	switch t := typ.(type) {
 	case *types.Basic:
-		if t.Info()&types.IsNumeric != 0 {
-			return append(basicTypeMethods, numericMethods...)
+		return &fieldInfo{
+			baseFieldInfo: baseFieldInfo{
+				name:      name,
+				typeName:  typeName,
+				isNumeric: t.Info()&types.IsNumeric != 0,
+			},
 		}
-		// it's a string
-		return basicTypeMethods
 	case *types.Named:
 		otn := t.Obj().Name()
 		if t.Obj().Pkg() != pkgInfo.Pkg {
 			parts := strings.Split(typ.String(), "/")
 			otn = parts[len(parts)-1]
 		}
-		return getMethodsForField(pkgInfo, name, t.Underlying(), otn)
+		return generateFieldInfo(pkgInfo, name, t.Underlying(), otn)
 	case *types.Struct:
-		if originalTypeName == "time.Time" {
-			return append(basicTypeMethods, numericMethods...)
+		if typeName == "time.Time" {
+			return &fieldInfo{
+				baseFieldInfo: baseFieldInfo{
+					name:      name,
+					typeName:  typeName,
+					isNumeric: true,
+				},
+			}
 		}
 
-		// Association was found (any struct or struct pointer)
-		return []method{newPreloadMethod(name)}
+		return &fieldInfo{
+			baseFieldInfo: baseFieldInfo{
+				name:     name,
+				typeName: typeName,
+				isStruct: true,
+			},
+		}
 	case *types.Pointer:
-		ptrMethods := getMethodsForField(pkgInfo, name, t.Elem(), "")
-		return append(ptrMethods, newIsNullMethod(name))
+		pf := generateFieldInfo(pkgInfo, name, t.Elem(), "")
+		return &fieldInfo{
+			baseFieldInfo: baseFieldInfo{
+				name:     name,
+				typeName: typeName,
+			},
+			isPointer: true,
+			pointed:   &pf.baseFieldInfo,
+		}
 	default:
 		// no filtering is needed
 		return nil
 	}
 }
 
-func getQuerySetFieldMethods(pkgInfo *loader.PackageInfo, fields []parser.StructField) []method {
+func getQuerySetFieldMethods(fields []fieldInfo) []method {
 	ret := []method{}
 	for _, f := range fields {
-		methods := getMethodsForField(pkgInfo, f.Name, f.Type, "")
+		methods := getQuerySetMethodsForField(f)
 		ret = append(ret, methods...)
 	}
 
 	return ret
+}
+
+func getMethodsForStruct(structTypeName string, fieldInfos []fieldInfo) []method {
+	methods := []method{newLimitMethod(), newAllMethod(structTypeName),
+		newOneMethod(structTypeName)}
+	fieldMethods := getQuerySetFieldMethods(fieldInfos)
+	methods = append(methods, fieldMethods...)
+	for _, m := range methods {
+		m.SetReceiverDeclaration(fmt.Sprintf("qs %sQuerySet", structTypeName))
+	}
+
+	methods = append(methods, newCreateMethod(structTypeName))
+
+	return methods
 }
 
 // GenerateQuerySetsForStructs is an internal method to retrieve querysets
@@ -128,10 +202,16 @@ func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.Par
 			continue
 		}
 
-		methods := []method{newLimitMethod(), newAllMethod(structTypeName),
-			newOneMethod(structTypeName)}
-		fieldMethods := getQuerySetFieldMethods(pkgInfo, ps.Fields)
-		methods = append(methods, fieldMethods...)
+		fieldInfos := []fieldInfo{}
+		for _, f := range ps.Fields {
+			fi := generateFieldInfo(pkgInfo, f.Name, f.Type, "")
+			if fi == nil {
+				continue
+			}
+			fieldInfos = append(fieldInfos, *fi)
+		}
+
+		methods := getMethodsForStruct(structTypeName, fieldInfos)
 
 		qsConfig := querySetStructConfig{
 			StructName: structTypeName,
@@ -185,7 +265,7 @@ const qsCode = `
 
 	{{ range .Methods }}
 		{{ .GetDoc .GetMethodName }}
-		func (qs {{ $qSTypeName }}) {{ .GetMethodName }}({{ .GetArgsDeclaration }})
+		func ({{ .GetReceiverDeclaration }}) {{ .GetMethodName }}({{ .GetArgsDeclaration }})
 		{{- .GetReturnValuesDeclaration $qSTypeName }} {
       {{ .GetBody }}
 		}
@@ -194,15 +274,6 @@ const qsCode = `
   // ===== END of query set {{ .Name }}
 
 	// ===== BEGIN of {{ .StructName }} modifiers
-
-	// Create creates {{ .StructName }}
-	func (o *{{ .StructName }}) Create(db *gorm.DB) error {
-		if err := db.Create(o).Error; err != nil {
-			return fmt.Errorf("can't create {{ .StructName }} %v: %s", o, err)
-		}
-
-		return nil
-	}
 
 	{{ $ft := printf "%s%s" .StructName "DBSchemaField" | lcf }}
 	type {{ $ft }} string

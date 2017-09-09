@@ -11,33 +11,48 @@ import (
 
 type method interface {
 	GetMethodName() string
+	SetReceiverDeclaration(receiverDeclaration string)
+	GetReceiverDeclaration() string
 	GetArgsDeclaration() string
 	GetReturnValuesDeclaration(qsTypeName string) string
 	GetBody() string
 	GetDoc(methodName string) string
 }
 
+// receiverMethod
+
+type receiverMethod struct {
+	receiverDeclaration string
+}
+
+// GetReceiverDeclaration returns receiver declaration
+func (m receiverMethod) GetReceiverDeclaration() string {
+	return m.receiverDeclaration
+}
+
+func (m *receiverMethod) SetReceiverDeclaration(receiverDeclaration string) {
+	m.receiverDeclaration = receiverDeclaration
+}
+
 // baseMethod
 
 type baseMethod struct {
+	*receiverMethod
+
 	name string
 	doc  string
 }
 
 func newBaseMethod(name string) baseMethod {
 	return baseMethod{
-		name: name,
+		receiverMethod: &receiverMethod{},
+		name:           name,
 	}
 }
 
 // GetMethodName returns name of method
 func (m baseMethod) GetMethodName() string {
 	return m.name
-}
-
-// GetReturnValuesDeclaration gets return values declaration
-func (m baseMethod) GetReturnValuesDeclaration(qsTypeName string) string {
-	return qsTypeName
 }
 
 // GetDoc returns default doc
@@ -59,6 +74,15 @@ func (m baseMethod) wrapMethod(code string) string {
       %s})
     return qs`
 	return fmt.Sprintf(tmpl, code)
+}
+
+// baseQuerySetMethod
+
+type baseQuerySetMethod struct{}
+
+// GetReturnValuesDeclaration gets return values declaration
+func (m baseQuerySetMethod) GetReturnValuesDeclaration(qsTypeName string) string {
+	return qsTypeName
 }
 
 // onFieldMethod
@@ -99,6 +123,10 @@ type oneArgMethod struct {
 
 func (m oneArgMethod) getArgName() string {
 	return m.argName
+}
+
+func (m *oneArgMethod) setArgName(argName string) {
+	m.argName = argName
 }
 
 // GetArgsDeclaration returns declaration of arguments list for func decl
@@ -146,6 +174,7 @@ type fieldOperationNoArgsMethod struct {
 	onFieldMethod
 	transformFieldName bool
 	noArgsMethod
+	baseQuerySetMethod
 }
 
 func (m *fieldOperationNoArgsMethod) setTransformFieldName(v bool) {
@@ -208,6 +237,7 @@ func newFieldOperationOneArgMethod(name, fieldName, argTypeName string) fieldOpe
 
 type structOperationOneArgMethod struct {
 	baseMethod
+	baseQuerySetMethod
 	oneArgMethod
 }
 
@@ -227,6 +257,7 @@ func newStructOperationOneArgMethod(name, argTypeName string) structOperationOne
 
 type binaryFilterMethod struct {
 	fieldOperationOneArgMethod
+	baseQuerySetMethod
 }
 
 func newBinaryFilterMethod(name, fieldName, argTypeName string) binaryFilterMethod {
@@ -263,6 +294,7 @@ func (m binaryFilterMethod) getWhereCondition() string {
 type unaryFilterMethod struct {
 	onFieldMethod
 	noArgsMethod
+	baseQuerySetMethod
 	op string
 }
 
@@ -283,11 +315,20 @@ func (m unaryFilterMethod) GetBody() string {
 
 // unaryFilerMethod
 
+// errorRetMethod
+
+type errorRetMethod struct{}
+
+func (m errorRetMethod) GetReturnValuesDeclaration(string) string {
+	return "error"
+}
+
 // modelMethod
 
 type modelMethod struct {
 	baseMethod
 	oneArgMethod
+	errorRetMethod
 	configurableGormMethod
 }
 
@@ -296,16 +337,51 @@ func (m modelMethod) GetBody() string {
 		m.getGormMethodName(), m.getArgName())
 }
 
-func (m modelMethod) GetReturnValuesDeclaration(string) string {
-	return "error"
-}
-
 func newModelMethod(name, gormName, argTypeName string) modelMethod {
 	return modelMethod{
 		baseMethod:             newBaseMethod(name),
 		oneArgMethod:           newOneArgMethod("ret", argTypeName),
 		configurableGormMethod: newConfigurableGormMethod(gormName),
 	}
+}
+
+// dbArgMethod
+
+type dbArgMethod struct {
+	oneArgMethod
+}
+
+func newDbArgMethod() dbArgMethod {
+	return dbArgMethod{
+		oneArgMethod: newOneArgMethod("db", "*gorm.DB"),
+	}
+}
+
+// createMetod
+
+type createMethod struct {
+	baseMethod
+	dbArgMethod
+	errorRetMethod
+	structTypeName string
+}
+
+func (m createMethod) GetBody() string {
+	const tmpl = `if err := db.Create(o).Error; err != nil {
+			return fmt.Errorf("can't create %s %%v: %%s", o, err)
+		}
+		return nil`
+	return fmt.Sprintf(tmpl, m.structTypeName)
+}
+
+func newCreateMethod(structTypeName string) createMethod {
+	r := createMethod{
+		baseMethod:     newBaseMethod("Create"),
+		dbArgMethod:    newDbArgMethod(),
+		structTypeName: structTypeName,
+	}
+	r.SetReceiverDeclaration(fmt.Sprintf("o *%s", structTypeName))
+	return r
 }
 
 // Concrete methods
