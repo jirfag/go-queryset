@@ -13,7 +13,7 @@ test_unit:
 test: test_unit bench test_static
 
 bench:
-	go test -bench=. -benchtime=1s -v -run=^$$ ./...
+	go test -bench=. -benchtime=1s -v -run=^$$ ./queryset/
 
 gen:
 	 go generate ./queryset/test/
