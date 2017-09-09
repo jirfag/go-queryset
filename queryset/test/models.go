@@ -13,7 +13,8 @@ type User struct {
 	gorm.Model
 
 	//Posts []Post
-	Name string
+	Name  string
+	Email string
 }
 
 // Blog is a blog

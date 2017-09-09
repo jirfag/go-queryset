@@ -43,10 +43,10 @@ func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 }
 
 func getRowsForUsers(users []test.User) *sqlmock.Rows {
-	var userFieldNames = []string{"id", "name", "created_at", "updated_at", "deleted_at"}
+	var userFieldNames = []string{"id", "name", "email", "created_at", "updated_at", "deleted_at"}
 	rows := sqlmock.NewRows(userFieldNames)
 	for _, u := range users {
-		rows = rows.AddRow(u.ID, u.Name, u.CreatedAt, u.UpdatedAt, u.DeletedAt)
+		rows = rows.AddRow(u.ID, u.Name, u.Email, u.CreatedAt, u.UpdatedAt, u.DeletedAt)
 	}
 	return rows
 }
@@ -59,7 +59,8 @@ func getTestUsers(n int) (ret []test.User) {
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
-			Name: fmt.Sprintf("name_%d", i),
+			Email: fmt.Sprintf("u%d@mail.ru", i),
+			Name:  fmt.Sprintf("name_%d", i),
 		}
 		ret = append(ret, u)
 	}
@@ -72,7 +73,8 @@ func getUserNoID() test.User {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
-		Name: fmt.Sprintf("name_rand_%d", rand.Int()),
+		Email: "qs@mail.ru",
+		Name:  fmt.Sprintf("name_rand_%d", rand.Int()),
 	}
 }
 
@@ -96,7 +98,8 @@ func TestQueries(t *testing.T) {
 		testUserSelectAllNoRecords,
 		testUserSelectOne,
 		testUserCreateOne,
-		testUserUpdateFiledsByPK,
+		testUserUpdateFieldsByPK,
+		testUserUpdateByEmail,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -144,8 +147,9 @@ func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUserNoID()
-	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`) VALUES (?,?,?,?)"
-	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), u.Name}
+	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`email`) VALUES (?,?,?,?,?)"
+	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
+		u.Name, u.Email}
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(args...).
 		WillReturnResult(sqlmock.NewResult(2, 1))
@@ -153,7 +157,22 @@ func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	assert.Equal(t, uint(2), u.ID)
 }
 
-func testUserUpdateFiledsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+func testUserUpdateByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	u := getUser()
+	req := "UPDATE `users` SET `name` = ?, `updated_at` = ? WHERE `users`.`deleted_at` IS NULL AND ((email = ?))"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(u.Name, sqlmock.AnyArg(), u.Email).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err := test.NewUserQuerySet(db).
+		EmailEq(u.Email).
+		GetUpdater().
+		SetName(u.Name).
+		Update()
+	assert.Nil(t, err)
+}
+
+func testUserUpdateFieldsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
 	req := "UPDATE `users` SET `name` = ?, `updated_at` = ? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
 	m.ExpectExec(fixedFullRe(req)).

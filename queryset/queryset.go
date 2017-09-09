@@ -3,6 +3,7 @@ package queryset
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
 	"go/types"
 	"io"
 	"sort"
@@ -13,12 +14,13 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/jirfag/go-queryset/parser"
+	"github.com/jirfag/go-queryset/queryset/methods"
 )
 
 var qsTmpl = template.Must(
 	template.New("generator").
 		Funcs(template.FuncMap{
-			"lcf":      lowercaseFirstRune,
+			"lcf":      methods.LowercaseFirstRune,
 			"todbname": gorm.ToDBName,
 		}).
 		Parse(qsCode),
@@ -31,7 +33,7 @@ type querySetStructConfig struct {
 	Fields     []parser.StructField
 }
 
-type methodsSlice []method
+type methodsSlice []methods.Method
 
 func (s methodsSlice) Len() int { return len(s) }
 func (s methodsSlice) Less(i, j int) bool {
@@ -55,8 +57,8 @@ type baseFieldInfo struct {
 }
 
 type fieldInfo struct {
+	pointed *baseFieldInfo
 	baseFieldInfo
-	pointed   *baseFieldInfo
 	isPointer bool
 }
 
@@ -66,17 +68,17 @@ func (fi fieldInfo) getPointed() fieldInfo {
 	}
 }
 
-func getQuerySetMethodsForField(f fieldInfo) []method {
-	basicTypeMethods := []method{
-		newBinaryFilterMethod("eq", f.name, f.typeName),
-		newBinaryFilterMethod("ne", f.name, f.typeName),
+func getQuerySetMethodsForField(f fieldInfo, qsTypeName string) []methods.Method {
+	basicTypeMethods := []methods.Method{
+		methods.NewBinaryFilterMethod("eq", f.name, f.typeName, qsTypeName),
+		methods.NewBinaryFilterMethod("ne", f.name, f.typeName, qsTypeName),
 	}
-	numericMethods := []method{
-		newBinaryFilterMethod("lt", f.name, f.typeName),
-		newBinaryFilterMethod("gt", f.name, f.typeName),
-		newBinaryFilterMethod("lte", f.name, f.typeName),
-		newBinaryFilterMethod("gte", f.name, f.typeName),
-		newOrderByMethod(f.name)}
+	numericMethods := []methods.Method{
+		methods.NewBinaryFilterMethod("lt", f.name, f.typeName, qsTypeName),
+		methods.NewBinaryFilterMethod("gt", f.name, f.typeName, qsTypeName),
+		methods.NewBinaryFilterMethod("lte", f.name, f.typeName, qsTypeName),
+		methods.NewBinaryFilterMethod("gte", f.name, f.typeName, qsTypeName),
+		methods.NewOrderByMethod(f.name, qsTypeName)}
 
 	if f.isNumeric {
 		return append(basicTypeMethods, numericMethods...)
@@ -84,12 +86,12 @@ func getQuerySetMethodsForField(f fieldInfo) []method {
 
 	if f.isStruct {
 		// Association was found (any struct or struct pointer)
-		return []method{newPreloadMethod(f.name)}
+		return []methods.Method{methods.NewPreloadMethod(f.name, qsTypeName)}
 	}
 
 	if f.isPointer {
-		ptrMethods := getQuerySetMethodsForField(f.getPointed())
-		return append(ptrMethods, newIsNullMethod(f.name))
+		ptrMethods := getQuerySetMethodsForField(f.getPointed(), qsTypeName)
+		return append(ptrMethods, methods.NewIsNullMethod(f.name, qsTypeName))
 	}
 
 	// it's a string
@@ -153,52 +155,79 @@ func generateFieldInfo(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringe
 	}
 }
 
-func getQuerySetFieldMethods(fields []fieldInfo) []method {
-	ret := []method{}
+func getQuerySetFieldMethods(fields []fieldInfo, qsTypeName string) []methods.Method {
+	ret := []methods.Method{}
 	for _, f := range fields {
-		methods := getQuerySetMethodsForField(f)
+		methods := getQuerySetMethodsForField(f, qsTypeName)
 		ret = append(ret, methods...)
 	}
 
 	return ret
 }
 
-func getMethodsForStruct(structTypeName string, fieldInfos []fieldInfo) []method {
-	methods := []method{newLimitMethod(), newAllMethod(structTypeName),
-		newOneMethod(structTypeName)}
-	fieldMethods := getQuerySetFieldMethods(fieldInfos)
-	methods = append(methods, fieldMethods...)
-	for _, m := range methods {
-		m.SetReceiverDeclaration(fmt.Sprintf("qs %sQuerySet", structTypeName))
-	}
-
-	methods = append(methods, newCreateMethod(structTypeName))
-
-	return methods
+func getUpdaterTypeName(structTypeName string) string {
+	return structTypeName + "Updater"
 }
 
-// GenerateQuerySetsForStructs is an internal method to retrieve querysets
-// generated code from parsed structs
-func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
+func getUpdaterMethods(fields []fieldInfo, structTypeName string) []methods.Method {
+	updaterTypeName := getUpdaterTypeName(structTypeName)
+	ret := []methods.Method{methods.NewUpdaterUpdateMethod(updaterTypeName)}
+	for _, f := range fields {
+		if f.isPointer {
+			// TODO
+			continue
+		}
+		dbSchemaTypeName := structTypeName + "DBSchema"
+		ret = append(ret,
+			methods.NewUpdaterSetMethod(f.name, f.typeName, updaterTypeName,
+				dbSchemaTypeName))
+	}
+	return ret
+}
+
+func getMethodsForStruct(structTypeName string, fieldInfos []fieldInfo) []methods.Method {
+	qsTypeName := structTypeName + "QuerySet"
+
+	ret := []methods.Method{
+		methods.NewLimitMethod(qsTypeName),
+		methods.NewAllMethod(structTypeName, qsTypeName),
+		methods.NewOneMethod(structTypeName, qsTypeName),
+		methods.NewGetUpdaterMethod(qsTypeName, getUpdaterTypeName(structTypeName)),
+	}
+
+	fieldMethods := getQuerySetFieldMethods(fieldInfos, qsTypeName)
+	ret = append(ret, fieldMethods...)
+	ret = append(ret, methods.NewCreateMethod(structTypeName))
+	ret = append(ret, getUpdaterMethods(fieldInfos, structTypeName)...)
+
+	return ret
+}
+
+func doesNeedToGenerateQuerySet(doc *ast.CommentGroup) bool {
+	if doc == nil {
+		return false
+	}
+
+	for _, c := range doc.List {
+		parts := strings.Split(strings.TrimSpace(c.Text), ":")
+		ok := len(parts) == 2 &&
+			strings.TrimSpace(strings.TrimPrefix(parts[0], "//")) == "gen" &&
+			strings.TrimSpace(parts[1]) == "qs"
+		if ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
+	structs parser.ParsedStructs) querySetStructConfigSlice {
+
 	querySetStructConfigs := querySetStructConfigSlice{}
 
 	for structTypeName, ps := range structs {
-		doc := ps.Doc
-		if doc == nil {
-			continue
-		}
-
-		ok := false
-		for _, c := range doc.List {
-			parts := strings.Split(strings.TrimSpace(c.Text), ":")
-			ok = len(parts) == 2 &&
-				strings.TrimSpace(strings.TrimPrefix(parts[0], "//")) == "gen" &&
-				strings.TrimSpace(parts[1]) == "qs"
-			if ok {
-				break
-			}
-		}
-		if !ok {
+		if !doesNeedToGenerateQuerySet(ps.Doc) {
 			continue
 		}
 
@@ -223,6 +252,14 @@ func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.Par
 		querySetStructConfigs = append(querySetStructConfigs, qsConfig)
 	}
 
+	return querySetStructConfigs
+}
+
+// GenerateQuerySetsForStructs is an internal method to retrieve querysets
+// generated code from parsed structs
+func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
+
+	querySetStructConfigs := generateQuerySetConfigs(pkgInfo, structs)
 	if len(querySetStructConfigs) == 0 {
 		return nil, nil
 	}
@@ -261,12 +298,10 @@ const qsCode = `
 	  }
   }
 
-  {{ $qSTypeName := .Name }}
-
 	{{ range .Methods }}
 		{{ .GetDoc .GetMethodName }}
 		func ({{ .GetReceiverDeclaration }}) {{ .GetMethodName }}({{ .GetArgsDeclaration }})
-		{{- .GetReturnValuesDeclaration $qSTypeName }} {
+		{{- .GetReturnValuesDeclaration }} {
       {{ .GetBody }}
 		}
 	{{ end }}
@@ -278,6 +313,7 @@ const qsCode = `
 	{{ $ft := printf "%s%s" .StructName "DBSchemaField" | lcf }}
 	type {{ $ft }} string
 
+	// {{ .StructName }}DBSchema stores db field names of {{ .StructName }}
 	var {{ .StructName }}DBSchema = struct {
 		{{ range .Fields }}
 			{{ .Name }} {{ $ft }}
@@ -310,6 +346,20 @@ const qsCode = `
 		}
 
 		return nil
+	}
+
+	// {{ .StructName }}Updater is an {{ .StructName }} updates manager
+	type {{ .StructName }}Updater struct {
+		fields map[string]interface{}
+		db *gorm.DB
+	}
+
+	// New{{ .StructName }}Updater creates new {{ .StructName }} updater
+	func New{{ .StructName }}Updater(db *gorm.DB) {{ .StructName }}Updater {
+		return {{ .StructName }}Updater{
+			fields: map[string]interface{}{},
+			db: db.Model(&{{ .StructName }}{}),
+		}
 	}
 
 	// ===== END of {{ .StructName }} modifiers
