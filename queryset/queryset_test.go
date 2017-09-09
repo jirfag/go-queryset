@@ -100,6 +100,8 @@ func TestQueries(t *testing.T) {
 		testUserCreateOne,
 		testUserUpdateFieldsByPK,
 		testUserUpdateByEmail,
+		testUserDeleteByEmail,
+		testUserDeleteByPK,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -180,6 +182,29 @@ func testUserUpdateFieldsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	assert.Nil(t, u.Update(db, test.UserDBSchema.Name))
+}
+
+func testUserDeleteByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	u := getUser()
+	req := "UPDATE `users` SET `deleted_at`=? WHERE `users`.`deleted_at` IS NULL AND ((email = ?))"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(sqlmock.AnyArg(), u.Email).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err := test.NewUserQuerySet(db).
+		EmailEq(u.Email).
+		Delete()
+	assert.Nil(t, err)
+}
+
+func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	u := getUser()
+	req := "UPDATE `users` SET `deleted_at`=? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(sqlmock.AnyArg(), u.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	assert.Nil(t, u.Delete(db))
 }
 
 func TestMain(m *testing.M) {

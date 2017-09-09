@@ -40,34 +40,32 @@ func newBaseQuerySetMethod(qsTypeName string) baseQuerySetMethod {
 
 // FieldOperationNoArgsMethod is for unary operations: preload, orderby, etc
 type FieldOperationNoArgsMethod struct {
-	configurableGormMethod
+	callGormMethod
 	onFieldMethod
-	transformFieldName bool
 	noArgsMethod
 	baseQuerySetMethod
 	retQuerySetMethod
 }
 
-func (m *FieldOperationNoArgsMethod) setTransformFieldName(v bool) {
-	m.transformFieldName = v
-}
-
-// GetBody returns method body
+// GetBody returns body
 func (m FieldOperationNoArgsMethod) GetBody() string {
-	fieldName := m.fieldName
-	if m.transformFieldName {
-		fieldName = gorm.ToDBName(fieldName)
-	}
-	return wrapToGormScope(fmt.Sprintf(`return d.%s("%s")`, m.getGormMethodName(), fieldName))
+	return wrapToGormScope(m.callGormMethod.GetBody())
 }
 
-func newFieldOperationNoArgsMethod(name, fieldName, qsTypeName string) FieldOperationNoArgsMethod {
+func newFieldOperationNoArgsMethod(name, fieldName, qsTypeName string,
+	transformFieldName bool) FieldOperationNoArgsMethod {
+
+	gormArgName := fieldName
+	if transformFieldName {
+		gormArgName = gorm.ToDBName(fieldName)
+	}
+	gormArgName = fmt.Sprintf(`"%s"`, gormArgName)
+
 	r := FieldOperationNoArgsMethod{
-		onFieldMethod:          newOnFieldMethod(name, fieldName),
-		configurableGormMethod: newConfigurableGormMethod(name),
-		transformFieldName:     true,
-		baseQuerySetMethod:     newBaseQuerySetMethod(qsTypeName),
-		retQuerySetMethod:      newRetQuerySetMethod(qsTypeName),
+		onFieldMethod:      newOnFieldMethod(name, fieldName),
+		callGormMethod:     newCallGormMethod(name, gormArgName, "d"),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		retQuerySetMethod:  newRetQuerySetMethod(qsTypeName),
 	}
 	r.setFieldNameFirst(false) // UserPreload -> PreloadUser
 	return r
@@ -197,27 +195,20 @@ func (m UnaryFilterMethod) GetBody() string {
 
 // unaryFilerMethod
 
-// ModelMethod is an model field (all, one, etc)
-type ModelMethod struct {
+// SelectMethod is a select field (all, one, etc)
+type SelectMethod struct {
 	namedMethod
 	oneArgMethod
 	baseQuerySetMethod
-	errorRetMethod
-	configurableGormMethod
+	gormErroredMethod
 }
 
-// GetBody returns body of method
-func (m ModelMethod) GetBody() string {
-	return fmt.Sprintf("return qs.db.%s(%s).Error",
-		m.getGormMethodName(), m.getArgName())
-}
-
-func newModelMethod(name, gormName, argTypeName, qsTypeName string) ModelMethod {
-	return ModelMethod{
-		namedMethod:            newNamedMethod(name),
-		baseQuerySetMethod:     newBaseQuerySetMethod(qsTypeName),
-		oneArgMethod:           newOneArgMethod("ret", argTypeName),
-		configurableGormMethod: newConfigurableGormMethod(gormName),
+func newSelectMethod(name, gormName, argTypeName, qsTypeName string) SelectMethod {
+	return SelectMethod{
+		namedMethod:        newNamedMethod(name),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		oneArgMethod:       newOneArgMethod("ret", argTypeName),
+		gormErroredMethod:  newGormErroredMethod(gormName, "ret", "qs.db"),
 	}
 }
 
@@ -240,18 +231,36 @@ func NewGetUpdaterMethod(qsTypeName, updaterTypeMethod string) GetUpdaterMethod 
 	}
 }
 
+// DeleteMethod creates Delete method
+type DeleteMethod struct {
+	baseQuerySetMethod
+	namedMethod
+	noArgsMethod
+	errorRetMethod
+	constBodyMethod
+}
+
+// NewDeleteMethod creates Delete method
+func NewDeleteMethod(qsTypeName, structTypeName string) DeleteMethod {
+	cbm := newConstBodyMethod("return qs.db.Delete(%s{}).Error", structTypeName)
+	return DeleteMethod{
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		namedMethod:        newNamedMethod("Delete"),
+		constBodyMethod:    cbm,
+	}
+}
+
 // Concrete methods
 
 // NewPreloadMethod creates new Preload method
 func NewPreloadMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod("Preload", fieldName, qsTypeName)
-	r.setTransformFieldName(false)
+	r := newFieldOperationNoArgsMethod("Preload", fieldName, qsTypeName, false)
 	return r
 }
 
 // NewOrderByMethod creates new OrderBy method
 func NewOrderByMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod("OrderBy", fieldName, qsTypeName)
+	r := newFieldOperationNoArgsMethod("OrderBy", fieldName, qsTypeName, true)
 	r.setGormMethodName("Order")
 	return r
 }
@@ -262,13 +271,13 @@ func NewLimitMethod(qsTypeName string) StructOperationOneArgMethod {
 }
 
 // NewAllMethod creates All method
-func NewAllMethod(structName, qsTypeName string) ModelMethod {
-	return newModelMethod("All", "Find", fmt.Sprintf("*[]%s", structName), qsTypeName)
+func NewAllMethod(structName, qsTypeName string) SelectMethod {
+	return newSelectMethod("All", "Find", fmt.Sprintf("*[]%s", structName), qsTypeName)
 }
 
 // NewOneMethod creates One method
-func NewOneMethod(structName, qsTypeName string) ModelMethod {
-	r := newModelMethod("One", "First", fmt.Sprintf("*%s", structName), qsTypeName)
+func NewOneMethod(structName, qsTypeName string) SelectMethod {
+	r := newSelectMethod("One", "First", fmt.Sprintf("*%s", structName), qsTypeName)
 	const doc = `// One is used to retrieve one result. It returns gorm.ErrRecordNotFound
 	// if nothing was fetched`
 	r.setDoc(doc)

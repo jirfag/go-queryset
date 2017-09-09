@@ -193,11 +193,14 @@ func getMethodsForStruct(structTypeName string, fieldInfos []fieldInfo) []method
 		methods.NewAllMethod(structTypeName, qsTypeName),
 		methods.NewOneMethod(structTypeName, qsTypeName),
 		methods.NewGetUpdaterMethod(qsTypeName, getUpdaterTypeName(structTypeName)),
+		methods.NewDeleteMethod(qsTypeName, structTypeName),
+		methods.NewStructModifierMethod("Create", structTypeName),
+		methods.NewStructModifierMethod("Delete", structTypeName),
 	}
 
 	fieldMethods := getQuerySetFieldMethods(fieldInfos, qsTypeName)
 	ret = append(ret, fieldMethods...)
-	ret = append(ret, methods.NewCreateMethod(structTypeName))
+
 	ret = append(ret, getUpdaterMethods(fieldInfos, structTypeName)...)
 
 	return ret

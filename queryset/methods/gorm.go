@@ -9,22 +9,40 @@ func wrapToGormScope(code string) string {
 	return fmt.Sprintf(tmpl, code)
 }
 
-// configurableGormMethod
-
-type configurableGormMethod struct {
+// callGormMethod
+type callGormMethod struct {
 	gormMethodName string
+	gormMethodArgs string
+	gormVarName    string
 }
 
-func (m *configurableGormMethod) setGormMethodName(name string) {
+func (m *callGormMethod) setGormMethodName(name string) {
 	m.gormMethodName = name
 }
 
-func (m *configurableGormMethod) getGormMethodName() string {
+func (m *callGormMethod) getGormMethodName() string {
 	return m.gormMethodName
 }
 
-func newConfigurableGormMethod(name string) configurableGormMethod {
-	return configurableGormMethod{gormMethodName: name}
+func (m *callGormMethod) getGormMethodArgs() string {
+	return m.gormMethodArgs
+}
+
+func (m *callGormMethod) getGormVarName() string {
+	return m.gormVarName
+}
+
+func (m callGormMethod) GetBody() string {
+	return fmt.Sprintf("return %s.%s(%s)",
+		m.getGormVarName(), m.getGormMethodName(), m.getGormMethodArgs())
+}
+
+func newCallGormMethod(name, args, varName string) callGormMethod {
+	return callGormMethod{
+		gormMethodName: name,
+		gormMethodArgs: args,
+		gormVarName:    varName,
+	}
 }
 
 // dbArgMethod
@@ -36,5 +54,22 @@ type dbArgMethod struct {
 func newDbArgMethod() dbArgMethod {
 	return dbArgMethod{
 		oneArgMethod: newOneArgMethod("db", "*gorm.DB"),
+	}
+}
+
+// gormErroredMethod
+type gormErroredMethod struct {
+	errorRetMethod
+	callGormMethod
+}
+
+// GetBody returns body of method
+func (m gormErroredMethod) GetBody() string {
+	return m.callGormMethod.GetBody() + ".Error"
+}
+
+func newGormErroredMethod(name, args, varName string) gormErroredMethod {
+	return gormErroredMethod{
+		callGormMethod: newCallGormMethod(name, args, varName),
 	}
 }
