@@ -7,7 +7,7 @@ test_static:
 		./...
 
 test_unit:
-	 go test -v ./...
+	 go test -v ./parser/ ./queryset/
 
 test: test_unit bench test_static
 

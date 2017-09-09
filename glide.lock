@@ -1,0 +1,46 @@
+hash: 91c500b0c21bb665db2496d5cbaba2080010f8bb3cf2510e934fe07bf7444653
+updated: 2017-09-09T15:04:46.890051362+03:00
+imports:
+- name: github.com/DATA-DOG/go-sqlmock
+  version: b983233bc0bbea4dc6e8ec8c8c923d935765ffec
+- name: github.com/denisenkom/go-mssqldb
+  version: 84dc5e6cc4a674abe81be5bf7835f4ae3dced817
+- name: github.com/erikstmartin/go-testdb
+  version: 8d10e4a1bae52cd8b81ffdec3445890d6dccab3d
+- name: github.com/go-sql-driver/mysql
+  version: 26471af196a17ee75a22e6481b5a5897fb16b081
+- name: github.com/jinzhu/gorm
+  version: 5174cc5c242a728b435ea2be8a2f7f998e15429b
+  subpackages:
+  - dialects/mysql
+- name: github.com/jinzhu/inflection
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
+- name: github.com/jinzhu/now
+  version: d939ba741945c047cac69c329c5fb0d6b4a06520
+- name: github.com/kisielk/sqlstruct
+  version: 648daed35d49dac24a4bff253b190a80da3ab6a5
+- name: golang.org/x/crypto
+  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  subpackages:
+  - md4
+- name: golang.org/x/tools
+  version: 3b1faeda9afbcba128c2d794b38ffe7982141139
+  subpackages:
+  - go/ast/astutil
+  - go/buildutil
+  - go/loader
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
+- name: gopkg.in/DATA-DOG/go-sqlmock.v1
+  version: b983233bc0bbea4dc6e8ec8c8c923d935765ffec
