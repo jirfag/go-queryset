@@ -7,7 +7,8 @@ test_static:
 		./...
 
 test_unit:
-	 go test -v ./parser/ ./queryset/
+	mkdir -p test
+	go test -v ./parser/ ./queryset/
 
 test: test_unit bench test_static
 
