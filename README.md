@@ -1,5 +1,6 @@
 # go-queryset [![GoDoc](https://godoc.org/github.com/jirfag/go-queryset?status.png)](http://godoc.org/github.com/jirfag/go-queryset) [![Go Report Card](https://goreportcard.com/badge/github.com/jirfag/go-queryset)](https://goreportcard.com/report/github.com/jirfag/go-queryset) [![Build Status](https://travis-ci.org/jirfag/go-queryset.svg?branch=master)](https://travis-ci.org/jirfag/go-queryset) [![Coverage Status](https://coveralls.io/repos/github/jirfag/go-queryset/badge.svg?branch=master)](https://coveralls.io/github/jirfag/go-queryset?branch=master)
-QuerySets for golang (go): typesafe, codegenerated ORM with GORM under the hood
+
+100% type-safe ORM for Go (Golang) with code generation and MySQL, PostgreSQL, Sqlite3, SQL Server support. GORM under the hood.
 
 
 ## Contents
