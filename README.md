@@ -13,6 +13,7 @@
   * [Select models](#select)
   * [Update models](#update)
   * [Delete models](#delete)
+  * [Full list generated methods](#full-list-of-generated-methods)
 * [Golang version](#golang-version)
 * [Why](#why)
   * [Why not just use GORM?](#why-not-just-use-gorm)
@@ -232,6 +233,113 @@ err := NewUserQuerySet(getGormDB()).
 	Delete()
 ```
 
+## Full list generated methods
+### QuerySet methods - `func (qs {StructName}QuerySet)`
+* create new queryset: `New{StructName}QuerySet(db *gorm.DB)`
+```go
+func NewUserQuerySet(db *gorm.DB) UserQuerySet
+```
+* filter by field (`where`)
+	* all field types: `{FieldName}(Eq|Ne)(arg {FieldType})`
+	```go
+	func (qs UserQuerySet) RatingEq(rating int) UserQuerySet
+	```
+	* numeric types (`int`, `int64`, `uint` etc + `time.Time`):
+ 		* `{FieldName}(Lt|Lte|Gt|Gte)(arg {FieldType)`
+		```go
+		func (qs UserQuerySet) RatingGt(rating int) UserQuerySet
+		```
+		* `Order(Asc|Desc)By{FieldName}()`
+		```go
+		func (qs UserQuerySet) OrderDescByRating() UserQuerySet
+		```
+	* pointer fields: `{FieldName}IsNull()`
+	```go
+	func (qs UserQuerySet) ProfileIsNull() UserQuerySet
+	```
+* preload related object (for structs fields or pointers to structs fields): `Preload{FieldName}()`
+	For struct
+	```go
+		type User struct {
+			profile *Profile
+		}
+	```
+	will be generated:
+	```go
+	func (qs UserQuerySet) PreloadProfile() UserQuerySet
+	```
+	`Preload` functions call `gorm.Preload` to preload related object.
+
+* selectors
+	* Select all objects, return `gorm.ErrRecordNotFound` if no records
+	```go
+	func (qs UserQuerySet) All(users *[]User) error
+	```
+	* Select one object, return `gorm.ErrRecordNotFound` if no records
+	```go
+	func (qs UserQuerySet) One(user *User) error
+	```
+* Limit
+```go
+func (qs UserQuerySet) Limit(limit int) UserQuerySet
+```
+* [get updater](#update-multiple-record-or-without-model-object) (for update + where, based on current queryset):
+```go
+func (qs UserQuerySet) GetUpdater() UserUpdater
+```
+* delete with conditions from current queryset: `Delete()`
+```go
+func (qs UserQuerySet) Delete() error
+```
+
+### Object methods - `func (u *User)`
+* create object
+```go
+func (o *User) Create(db *gorm.DB) error
+```
+* delete object by PK
+```go
+func (o *User) Delete(db *gorm.DB) error
+```
+* update object by PK
+```go
+func (o *User) Update(db *gorm.DB, fields ...userDBSchemaField) error
+```
+Pay attention that field names are automatically generated into variable
+```go
+type userDBSchemaField string
+
+// UserDBSchema stores db field names of User
+var UserDBSchema = struct {
+	ID          userDBSchemaField
+	CreatedAt   userDBSchemaField
+	UpdatedAt   userDBSchemaField
+	DeletedAt   userDBSchemaField
+	Rating      userDBSchemaField
+	RatingMarks userDBSchemaField
+}{
+
+	ID:          userDBSchemaField("id"),
+	CreatedAt:   userDBSchemaField("created_at"),
+	UpdatedAt:   userDBSchemaField("updated_at"),
+	DeletedAt:   userDBSchemaField("deleted_at"),
+	Rating:      userDBSchemaField("rating"),
+	RatingMarks: userDBSchemaField("rating_marks"),
+}
+```
+
+And they are typed, so you won't have string-misprint error.
+
+
+### Updater methods - `func (u UserUpdater)`
+* set field: `Set{FieldName}`
+```go
+func (u UserUpdater) SetCreatedAt(createdAt time.Time) UserUpdater
+```
+* execute update: `Update()`
+```go
+func (u UserUpdater) Update() error
+```
 
 # Golang version
 Golang >= 1.7 is required. Tested on go 1.7, 1.8, 1.9 versions by [Travis CI](https://travis-ci.org/jirfag/go-queryset)
