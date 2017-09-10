@@ -55,7 +55,7 @@ type User struct {
 }
 ```
 
-Take a loot at line `// gen:qs`. It's a necessary line to [enable querysets](#https://github.com/jirfag/go-queryset/blob/master/queryset/queryset.go#L211) for this struct. You can put it at any line in struct's doc-comment.
+Take a loot at line `// gen:qs`. It's a necessary line to [enable querysets](https://github.com/jirfag/go-queryset/blob/master/queryset/queryset.go#L211) for this struct. You can put it at any line in struct's doc-comment.
 
 Then execute next shell command:
 ```bash
