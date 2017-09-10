@@ -13,7 +13,7 @@
   * [Select models](#select)
   * [Update models](#update)
   * [Delete models](#delete)
-  * [Full list generated methods](#full-list-of-generated-methods)
+  * [Full list of generated methods](#full-list-of-generated-methods)
 * [Golang version](#golang-version)
 * [Why](#why)
   * [Why not just use GORM?](#why-not-just-use-gorm)
@@ -233,7 +233,7 @@ err := NewUserQuerySet(getGormDB()).
 	Delete()
 ```
 
-## Full list generated methods
+## Full list of generated methods
 ### QuerySet methods - `func (qs {StructName}QuerySet)`
 * create new queryset: `New{StructName}QuerySet(db *gorm.DB)`
 ```go
