@@ -24,6 +24,7 @@
 * [How it relates to another languages ORMs](#how-it-relates-to-another-languages-orms)
 * [Features](#features)
 * [Limitations](#limitations)
+* [Performance](#performance)
   
 
 # Installation
@@ -522,3 +523,18 @@ QuerySet pattern is similar to:
 # Limitations
 * Joins aren't supported
 * Struct tags aren't supported
+
+# Performance
+## Runtime
+Performance is similar to GORM performance. GORM uses reflection and it may be slow, so why don't we generate raw SQL code?
+1. Despite the fact GORM uses reflection, it's the most popular ORM for golang. There are really few tasks where you are CPU-bound while working with DB, usually you are CPU-bound in machine with DB and network/disk bound on machine with golang server.
+2. Premature optimization is the root of all evil.
+3. Go-queryset is fully compatible with GORM.
+4. Code generation is used here not to speedup things, but to create nice interfaces.
+5. The main purpose of go-queryset isn't speed, but usage convenience.
+
+## Code generation
+Code generation is fast:
+1. We parse AST of needed file and find needed structs.
+2. We load package and parse it by `go/types`
+3. We don't use `reflect` module for parsing, because it's slow
