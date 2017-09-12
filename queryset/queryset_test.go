@@ -102,6 +102,7 @@ func TestQueries(t *testing.T) {
 		testUserUpdateByEmail,
 		testUserDeleteByEmail,
 		testUserDeleteByPK,
+		testUserQueryFilters,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -145,6 +146,65 @@ func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	var user test.User
 	assert.Nil(t, test.NewUserQuerySet(db).One(&user))
 	assert.Equal(t, expUsers[0], user)
+}
+
+type qsQuerier func(qs test.UserQuerySet) test.UserQuerySet
+
+type userQueryTestCase struct {
+	q    string
+	args []driver.Value
+	qs   qsQuerier
+}
+
+func testUserQueryFilters(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	cases := []userQueryTestCase{
+		{
+			q:    "((name IN (?)))",
+			args: []driver.Value{"a"},
+			qs: func(qs test.UserQuerySet) test.UserQuerySet {
+				return qs.NameIn("a")
+			},
+		},
+		{
+			q:    "((name IN (?,?)))",
+			args: []driver.Value{"a", "b"},
+			qs: func(qs test.UserQuerySet) test.UserQuerySet {
+				return qs.NameIn("a", "b")
+			},
+		},
+		{
+			q:    "((name NOT IN (?)))",
+			args: []driver.Value{"a"},
+			qs: func(qs test.UserQuerySet) test.UserQuerySet {
+				return qs.NameNotIn("a")
+			},
+		},
+		{
+			q:    "((name NOT IN (?,?)))",
+			args: []driver.Value{"a", "b"},
+			qs: func(qs test.UserQuerySet) test.UserQuerySet {
+				return qs.NameNotIn("a", "b")
+			},
+		},
+	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.q, func(t *testing.T) {
+			t.Parallel()
+			runUserQueryFilterSubTest(t, c, m, db)
+		})
+	}
+}
+
+func runUserQueryFilterSubTest(t *testing.T, c userQueryTestCase, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(5)
+	req := "SELECT * FROM `users` WHERE `users`.deleted_at IS NULL AND " + c.q
+	m.ExpectQuery(fixedFullRe(req)).WithArgs(c.args...).
+		WillReturnRows(getRowsForUsers(expUsers))
+
+	var users []test.User
+	assert.Nil(t, c.qs(test.NewUserQuerySet(db)).All(&users))
+	assert.Equal(t, expUsers, users)
 }
 
 func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {

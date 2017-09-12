@@ -1,6 +1,9 @@
 package methods
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Method represents method (func with receiver)
 type Method interface {
@@ -96,6 +99,29 @@ func newOneArgMethod(argName, argTypeName string) oneArgMethod {
 	return oneArgMethod{
 		argName:     argName,
 		argTypeName: argTypeName,
+	}
+}
+
+type nArgsMethod struct {
+	args []oneArgMethod
+}
+
+func (m nArgsMethod) getArgName(n int) string {
+	return m.args[n].getArgName()
+}
+
+// GetArgsDeclaration returns declaration of arguments list for func decl
+func (m nArgsMethod) GetArgsDeclaration() string {
+	decls := []string{}
+	for _, a := range m.args {
+		decls = append(decls, a.GetArgsDeclaration())
+	}
+	return strings.Join(decls, ",")
+}
+
+func newNArgsMethod(args ...oneArgMethod) nArgsMethod {
+	return nArgsMethod{
+		args: args,
 	}
 }
 

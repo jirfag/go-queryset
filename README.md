@@ -25,7 +25,7 @@
 * [Features](#features)
 * [Limitations](#limitations)
 * [Performance](#performance)
-  
+
 
 # Installation
 ```bash
@@ -44,7 +44,7 @@ type User struct {
 }
 ```
 
-Now transform it by [adding comments for query set generation](https://github.com/jirfag/go-queryset/blob/master/examples/comparison/gorm4/gorm4.go#L15): 
+Now transform it by [adding comments for query set generation](https://github.com/jirfag/go-queryset/blob/master/examples/comparison/gorm4/gorm4.go#L15):
 ```go
 //go:generate goqueryset -in models.go
 
@@ -57,7 +57,7 @@ type User struct {
 }
 ```
 
-Take a loot at line `// gen:qs`. It's a necessary line to [enable querysets](https://github.com/jirfag/go-queryset/blob/master/queryset/queryset.go#L211) for this struct. You can put it at any line in struct's doc-comment.
+Take a loot at line `// gen:qs`. It's a necessary line to enable querysets for this struct. You can put it at any line in struct's doc-comment.
 
 Then execute next shell command:
 ```bash
@@ -177,7 +177,7 @@ err := NewUserQuerySet(getGormDB()).
 	RegisteredToday().
 	OrderDescByCreatedAt().
 	Limit(N)
-	All(&users) 
+	All(&users)
 ```
 
 ## Update
@@ -241,10 +241,16 @@ err := NewUserQuerySet(getGormDB()).
 func NewUserQuerySet(db *gorm.DB) UserQuerySet
 ```
 * filter by field (`where`)
-	* all field types: `{FieldName}(Eq|Ne)(arg {FieldType})`
-	```go
-	func (qs UserQuerySet) RatingEq(rating int) UserQuerySet
-	```
+	* all field types
+    * Equals: `{FieldName}(Eq|Ne)(arg {FieldType})`
+  	```go
+  	func (qs UserQuerySet) RatingEq(rating int) UserQuerySet
+  	```
+    * In: `{FieldName}(Not)In(arg {FieldType}, argsRest ...{FieldType})`
+    ```go
+    func (qs UserQuerySet) NameIn(name string, nameRest ...string) UserQuerySet {}
+    func (qs UserQuerySet) NameNotIn(name string, nameRest ...string) UserQuerySet {
+    ```
 	* numeric types (`int`, `int64`, `uint` etc + `time.Time`):
  		* `{FieldName}(Lt|Lte|Gt|Gte)(arg {FieldType)`
 		```go
@@ -254,9 +260,10 @@ func NewUserQuerySet(db *gorm.DB) UserQuerySet
 		```go
 		func (qs UserQuerySet) OrderDescByRating() UserQuerySet
 		```
-	* pointer fields: `{FieldName}IsNull()`
+	* pointer fields: `{FieldName}IsNull()`, `{FieldName}IsNotNull()`
 	```go
-	func (qs UserQuerySet) ProfileIsNull() UserQuerySet
+	func (qs UserQuerySet) ProfileIsNull() UserQuerySet {}
+  func (qs UserQuerySet) ProfileIsNotNull() UserQuerySet {}
 	```
 * preload related object (for structs fields or pointers to structs fields): `Preload{FieldName}()`
 	For struct

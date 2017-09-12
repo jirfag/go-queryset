@@ -54,6 +54,7 @@ type baseFieldInfo struct {
 	typeName  string // name of type of field
 	isStruct  bool
 	isNumeric bool
+	isTime    bool
 }
 
 type fieldInfo struct {
@@ -69,15 +70,22 @@ func (fi fieldInfo) getPointed() fieldInfo {
 }
 
 func getQuerySetMethodsForField(f fieldInfo, qsTypeName string) []methods.Method {
+	fCtx := methods.NewQsFieldContext("", f.name, f.typeName, qsTypeName)
 	basicTypeMethods := []methods.Method{
-		methods.NewBinaryFilterMethod("eq", f.name, f.typeName, qsTypeName),
-		methods.NewBinaryFilterMethod("ne", f.name, f.typeName, qsTypeName),
+		methods.NewBinaryFilterMethod(fCtx.WithName("eq")),
+		methods.NewBinaryFilterMethod(fCtx.WithName("ne")),
 	}
+	if !f.isTime {
+		inMethod := methods.NewInFilterMethod(fCtx)
+		notInMethod := methods.NewNotInFilterMethod(fCtx)
+		basicTypeMethods = append(basicTypeMethods, inMethod, notInMethod)
+	}
+
 	numericMethods := []methods.Method{
-		methods.NewBinaryFilterMethod("lt", f.name, f.typeName, qsTypeName),
-		methods.NewBinaryFilterMethod("gt", f.name, f.typeName, qsTypeName),
-		methods.NewBinaryFilterMethod("lte", f.name, f.typeName, qsTypeName),
-		methods.NewBinaryFilterMethod("gte", f.name, f.typeName, qsTypeName),
+		methods.NewBinaryFilterMethod(fCtx.WithName("lt")),
+		methods.NewBinaryFilterMethod(fCtx.WithName("gt")),
+		methods.NewBinaryFilterMethod(fCtx.WithName("lte")),
+		methods.NewBinaryFilterMethod(fCtx.WithName("gte")),
 		methods.NewOrderAscByMethod(f.name, qsTypeName),
 		methods.NewOrderDescByMethod(f.name, qsTypeName),
 	}
@@ -93,7 +101,9 @@ func getQuerySetMethodsForField(f fieldInfo, qsTypeName string) []methods.Method
 
 	if f.isPointer {
 		ptrMethods := getQuerySetMethodsForField(f.getPointed(), qsTypeName)
-		return append(ptrMethods, methods.NewIsNullMethod(f.name, qsTypeName))
+		return append(ptrMethods,
+			methods.NewIsNullMethod(f.name, qsTypeName),
+			methods.NewIsNotNullMethod(f.name, qsTypeName))
 	}
 
 	// it's a string
@@ -130,6 +140,7 @@ func generateFieldInfo(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringe
 					name:      name,
 					typeName:  typeName,
 					isNumeric: true,
+					isTime:    true,
 				},
 			}
 		}
