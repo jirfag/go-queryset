@@ -249,7 +249,7 @@ func NewUserQuerySet(db *gorm.DB) UserQuerySet
 		* In: `{FieldName}(Not)In(arg {FieldType}, argsRest ...{FieldType})`
 		```go
 		func (qs UserQuerySet) NameIn(name string, nameRest ...string) UserQuerySet {}
-		func (qs UserQuerySet) NameNotIn(name string, nameRest ...string) UserQuerySet {
+		func (qs UserQuerySet) NameNotIn(name string, nameRest ...string) UserQuerySet {}
 		```
 	* numeric types (`int`, `int64`, `uint` etc + `time.Time`):
  		* `{FieldName}(Lt|Lte|Gt|Gte)(arg {FieldType)`
