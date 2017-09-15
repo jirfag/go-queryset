@@ -209,6 +209,7 @@ func getMethodsForStruct(structTypeName string, fieldInfos []fieldInfo) []method
 		methods.NewDeleteMethod(qsTypeName, structTypeName),
 		methods.NewStructModifierMethod("Create", structTypeName),
 		methods.NewStructModifierMethod("Delete", structTypeName),
+		methods.NewCountMethod(qsTypeName),
 	}
 
 	fieldMethods := getQuerySetFieldMethods(fieldInfos, qsTypeName)
@@ -310,7 +311,7 @@ const qsCode = `
   // New{{ .Name }} constructs new {{ .Name }}
   func New{{ .Name }}(db *gorm.DB) {{ .Name }} {
 	  return {{ .Name }}{
-		  db: db,
+		  db: db.Model(&{{ .StructName }}{}),
 	  }
   }
 

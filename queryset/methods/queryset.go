@@ -311,6 +311,27 @@ func NewDeleteMethod(qsTypeName, structTypeName string) DeleteMethod {
 	}
 }
 
+// CountMethod creates Count method
+type CountMethod struct {
+	baseQuerySetMethod
+	namedMethod
+	noArgsMethod
+	constRetMethod
+	constBodyMethod
+}
+
+// NewCountMethod returns new CountMethod
+func NewCountMethod(qsTypeName string) CountMethod {
+	return CountMethod{
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		namedMethod:        newNamedMethod("Count"),
+		constRetMethod:     newConstRetMethod("(int, error)"),
+		constBodyMethod: newConstBodyMethod(`var count int
+			err := %s.Count(&count).Error
+			return count, err`, qsDbName),
+	}
+}
+
 // Concrete methods
 
 // NewPreloadMethod creates new Preload method

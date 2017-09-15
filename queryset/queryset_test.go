@@ -51,6 +51,15 @@ func getRowsForUsers(users []test.User) *sqlmock.Rows {
 	return rows
 }
 
+func getRowWithFields(fields []driver.Value) *sqlmock.Rows {
+	fieldNames := []string{}
+	for i := range fields {
+		fieldNames = append(fieldNames, fmt.Sprintf("f%d", i))
+	}
+
+	return sqlmock.NewRows(fieldNames).AddRow(fields...)
+}
+
 func getTestUsers(n int) (ret []test.User) {
 	for i := 0; i < n; i++ {
 		u := test.User{
@@ -103,6 +112,7 @@ func TestQueries(t *testing.T) {
 		testUserDeleteByEmail,
 		testUserDeleteByPK,
 		testUserQueryFilters,
+		testUsersCount,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -265,6 +275,17 @@ func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	assert.Nil(t, u.Delete(db))
+}
+
+func testUsersCount(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expCount := 5
+	req := "SELECT count(*) FROM `users` WHERE `users`.deleted_at IS NULL AND ((name != ?))"
+	m.ExpectQuery(fixedFullRe(req)).WithArgs(driver.Value("")).
+		WillReturnRows(getRowWithFields([]driver.Value{expCount}))
+
+	cnt, err := test.NewUserQuerySet(db).NameNe("").Count()
+	assert.Nil(t, err)
+	assert.Equal(t, expCount, cnt)
 }
 
 func TestMain(m *testing.M) {
