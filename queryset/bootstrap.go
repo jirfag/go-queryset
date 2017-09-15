@@ -56,10 +56,13 @@ func writeQuerySetsToOutput(r io.Reader, pkgInfo *loader.PackageInfo, outFile st
 	}()
 
 	const hdrTmpl = `package %s
-  import (
-    "github.com/jinzhu/gorm"
-    "github.com/jirfag/go-queryset/queryset/base"
-  )
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 `
 	_, err = outF.WriteString(fmt.Sprintf(hdrTmpl, pkgInfo.Pkg.Name()))
 	if err != nil {
