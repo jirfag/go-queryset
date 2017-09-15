@@ -31,8 +31,10 @@ type ParsedStruct struct {
 }
 
 func fileNameToPkgName(filePath string) string {
-	return strings.TrimPrefix(filepath.Dir(filePath),
-		fmt.Sprintf("%s/src/", os.Getenv("GOPATH")))
+	r := strings.TrimPrefix(filepath.Dir(filePath), os.Getenv("GOPATH"))
+	r = strings.TrimPrefix(r, "/") // may be and may not be
+	r = strings.TrimPrefix(r, "src/")
+	return r
 }
 
 func typeCheckFuncBodies(path string) bool {
