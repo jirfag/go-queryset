@@ -299,6 +299,11 @@ func (qs UserQuerySet) GetUpdater() UserUpdater
 ```go
 func (qs UserQuerySet) Delete() error
 ```
+* Aggregations
+	* Count
+	```go
+	func (qs UserQuerySet) Count() (int, error)
+	```
 
 ### Object methods - `func (u *User)`
 * create object
