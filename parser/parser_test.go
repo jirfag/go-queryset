@@ -42,7 +42,11 @@ func TestFileNameToPkgName(t *testing.T) {
 		t.Skipf("it's a forked repo %q, skip pkg path test", selfFilePath)
 	}
 
-	assert.Equal(t, selfPkg, fileNameToPkgName(selfFilePath))
+	assert.Equal(t, selfPkg, fileNameToPkgName("", selfFilePath))
+
+	const fileNotInGoPath = "models/models.go"
+	const absFileNotInGoPath = "/tmp/" + fileNotInGoPath
+	assert.Equal(t, "./models", fileNameToPkgName(fileNotInGoPath, absFileNotInGoPath))
 }
 
 func getTempFileName(rootDir, prefix, suffix string) (*os.File, error) {

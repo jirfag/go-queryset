@@ -30,8 +30,15 @@ type ParsedStruct struct {
 	Doc    *ast.CommentGroup // line comments; or nil
 }
 
-func fileNameToPkgName(filePath string) string {
-	r := strings.TrimPrefix(filepath.Dir(filePath), os.Getenv("GOPATH"))
+func fileNameToPkgName(filePath, absFilePath string) string {
+	dir := filepath.Dir(absFilePath)
+	gopath := os.Getenv("GOPATH")
+	if !strings.HasPrefix(dir, gopath) {
+		// not in GOPATH
+		return "./" + filepath.Dir(filePath)
+	}
+
+	r := strings.TrimPrefix(dir, gopath)
 	r = strings.TrimPrefix(r, "/") // may be and may not be
 	r = strings.TrimPrefix(r, "src/")
 	return r
@@ -103,7 +110,7 @@ func GetStructsInFile(filePath string) (*loader.PackageInfo, ParsedStructs, erro
 		return nil, nil, fmt.Errorf("can't get struct names: %s", err)
 	}
 
-	packageFullName := fileNameToPkgName(absFilePath)
+	packageFullName := fileNameToPkgName(filePath, absFilePath)
 	lprog, err := loadProgramFromPackage(packageFullName)
 	if err != nil {
 		return nil, nil, err
