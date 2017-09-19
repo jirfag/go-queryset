@@ -198,9 +198,7 @@ func testUserQueryFilters(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		},
 	}
 	for _, c := range cases {
-		c := c
 		t.Run(c.q, func(t *testing.T) {
-			t.Parallel()
 			runUserQueryFilterSubTest(t, c, m, db)
 		})
 	}

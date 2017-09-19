@@ -110,14 +110,33 @@ func getQuerySetMethodsForField(f fieldInfo, qsTypeName string) []methods.Method
 	return basicTypeMethods
 }
 
-func generateFieldInfo(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringer, originalTypeName string) *fieldInfo {
-	typeName := typ.String()
-	if originalTypeName != "" {
-		// it's needed to preserver typedef's original name
-		typeName = originalTypeName
+func getOriginalTypeName(t *types.Named, pkgInfo *loader.PackageInfo) string {
+	if t.Obj().Pkg() == pkgInfo.Pkg {
+		// t is from the same package as a struct
+		return t.Obj().Name()
 	}
 
-	switch t := typ.(type) {
+	// t is an imported from another package type
+	return fmt.Sprintf("%s.%s", t.Obj().Pkg().Name(), t.Obj().Name())
+}
+
+func generateFieldInfo(pkgInfo *loader.PackageInfo, name string,
+	fieldType fmt.Stringer) *fieldInfo {
+
+	typeName := fieldType.String()
+
+	if typeName == "time.Time" {
+		return &fieldInfo{
+			baseFieldInfo: baseFieldInfo{
+				name:      name,
+				typeName:  typeName,
+				isNumeric: true,
+				isTime:    true,
+			},
+		}
+	}
+
+	switch t := fieldType.(type) {
 	case *types.Basic:
 		return &fieldInfo{
 			baseFieldInfo: baseFieldInfo{
@@ -127,24 +146,12 @@ func generateFieldInfo(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringe
 			},
 		}
 	case *types.Named:
-		otn := t.Obj().Name()
-		if t.Obj().Pkg() != pkgInfo.Pkg {
-			parts := strings.Split(typ.String(), "/")
-			otn = parts[len(parts)-1]
+		r := generateFieldInfo(pkgInfo, name, t.Underlying())
+		if r != nil {
+			r.typeName = getOriginalTypeName(t, pkgInfo)
 		}
-		return generateFieldInfo(pkgInfo, name, t.Underlying(), otn)
+		return r
 	case *types.Struct:
-		if typeName == "time.Time" {
-			return &fieldInfo{
-				baseFieldInfo: baseFieldInfo{
-					name:      name,
-					typeName:  typeName,
-					isNumeric: true,
-					isTime:    true,
-				},
-			}
-		}
-
 		return &fieldInfo{
 			baseFieldInfo: baseFieldInfo{
 				name:     name,
@@ -153,7 +160,7 @@ func generateFieldInfo(pkgInfo *loader.PackageInfo, name string, typ fmt.Stringe
 			},
 		}
 	case *types.Pointer:
-		pf := generateFieldInfo(pkgInfo, name, t.Elem(), "")
+		pf := generateFieldInfo(pkgInfo, name, t.Elem())
 		return &fieldInfo{
 			baseFieldInfo: baseFieldInfo{
 				name:     name,
@@ -250,7 +257,7 @@ func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
 
 		fieldInfos := []fieldInfo{}
 		for _, f := range ps.Fields {
-			fi := generateFieldInfo(pkgInfo, f.Name, f.Type, "")
+			fi := generateFieldInfo(pkgInfo, f.Name, f.Type)
 			if fi == nil {
 				continue
 			}
