@@ -77,13 +77,14 @@ func getTestUsers(n int) (ret []test.User) {
 }
 
 func getUserNoID() test.User {
+	randInt := rand.Int()
 	return test.User{
 		Model: gorm.Model{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
-		Email: "qs@mail.ru",
-		Name:  fmt.Sprintf("name_rand_%d", rand.Int()),
+		Email: fmt.Sprintf("qs_%d@mail.ru", randInt),
+		Name:  fmt.Sprintf("name_rand_%d", randInt),
 	}
 }
 
@@ -113,6 +114,7 @@ func TestQueries(t *testing.T) {
 		testUserDeleteByPK,
 		testUserQueryFilters,
 		testUsersCount,
+		testUsersUpdateNum,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -273,6 +275,23 @@ func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	assert.Nil(t, u.Delete(db))
+}
+
+func testUsersUpdateNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	usersNum := 2
+	users := getTestUsers(usersNum)
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((email IN (?,?)))"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(sqlmock.AnyArg(), users[0].Email, users[1].Email).
+		WillReturnResult(sqlmock.NewResult(0, int64(usersNum)))
+
+	num, err := test.NewUserQuerySet(db).
+		EmailIn(users[0].Email, users[1].Email).
+		GetUpdater().
+		SetName("some name").
+		UpdateNum()
+	assert.Nil(t, err)
+	assert.Equal(t, int64(usersNum), num)
 }
 
 func testUsersCount(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
