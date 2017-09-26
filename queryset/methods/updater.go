@@ -1,7 +1,10 @@
 package methods
 
-// baseUpdaterMethod
+import (
+	"strings"
+)
 
+// baseUpdaterMethod
 type baseUpdaterMethod struct {
 	structMethod
 	updaterTypeName string
@@ -64,5 +67,29 @@ func NewUpdaterUpdateMethod(updaterTypeName string) UpdaterUpdateMethod {
 		namedMethod:       newNamedMethod("Update"),
 		baseUpdaterMethod: newBaseUpdaterMethod(updaterTypeName),
 		constBodyMethod:   newConstBodyMethod("return u.db.Updates(u.fields).Error"),
+	}
+}
+
+// UpdaterUpdateNumMethod describes UpdateNum method
+type UpdaterUpdateNumMethod struct {
+	namedMethod
+	baseUpdaterMethod
+	noArgsMethod
+	constRetMethod
+	constBodyMethod
+}
+
+// NewUpdaterUpdateNumMethod creates new UpdateNum method
+func NewUpdaterUpdateNumMethod(updaterTypeName string) UpdaterUpdateNumMethod {
+	return UpdaterUpdateNumMethod{
+		namedMethod:       newNamedMethod("UpdateNum"),
+		baseUpdaterMethod: newBaseUpdaterMethod(updaterTypeName),
+		constRetMethod:    newConstRetMethod("(int64, error)"),
+		constBodyMethod: newConstBodyMethod(
+			strings.Join([]string{
+				"db := u.db.Updates(u.fields)",
+				"return db.RowsAffected, db.Error",
+			}, "\n"),
+		),
 	}
 }

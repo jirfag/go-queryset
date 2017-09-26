@@ -216,6 +216,21 @@ err := NewUserQuerySet(getGormDB()).
 UPDATE `users` SET `rating_marks` = ? WHERE `users`.deleted_at IS NULL AND ((rating < ?))
 ```
 
+### UpdateNum
+This method makes the same sql queries as Update() method, except return values: it returns
+number of affected rows and error
+
+```go
+num, err := NewUserQuerySet(getGormDB()).
+	RatingLt(1).
+	GetUpdater().
+	SetRatingMarks(0).
+	UpdateNum()
+```
+```sql
+UPDATE `users` SET `rating_marks` = ? WHERE `users`.deleted_at IS NULL AND ((rating < ?))
+```
+
 ## Delete
 ### Delete one record by primary key
 ```go

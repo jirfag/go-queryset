@@ -191,7 +191,10 @@ func getUpdaterTypeName(structTypeName string) string {
 
 func getUpdaterMethods(fields []fieldInfo, structTypeName string) []methods.Method {
 	updaterTypeName := getUpdaterTypeName(structTypeName)
-	ret := []methods.Method{methods.NewUpdaterUpdateMethod(updaterTypeName)}
+	ret := []methods.Method{
+		methods.NewUpdaterUpdateMethod(updaterTypeName),
+		methods.NewUpdaterUpdateNumMethod(updaterTypeName),
+	}
 	for _, f := range fields {
 		if f.isPointer {
 			// TODO
