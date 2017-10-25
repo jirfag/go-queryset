@@ -85,8 +85,14 @@ func (b *methodsBuilder) buildUpdaterStructMethods() {
 
 func (b *methodsBuilder) buildUpdaterFieldMethods(f field.Info) {
 	if f.IsPointer {
-		// TODO
-		return
+		p := f.GetPointed()
+		if p.IsStruct {
+			// TODO
+			return
+		}
+
+		// It's a pointer to simple field (string, int).
+		// Developer used pointer to distinguish between NULL and not NULL values.
 	}
 
 	dbSchemaTypeName := b.s.TypeName + "DBSchema"

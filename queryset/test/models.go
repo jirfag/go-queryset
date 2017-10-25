@@ -32,7 +32,7 @@ type Post struct {
 
 	Blog  *Blog // may be no blog
 	User  User
-	Title string
+	Title *string
 	Str   tmp.StringDef
 }
 
