@@ -49,3 +49,11 @@ func (b *Blog) SomeMethod() string {
 
 	return "0"
 }
+
+// CheckReservedKeywords is a struct for checking
+// work of fields with reserved keywords names
+// gen:qs
+type CheckReservedKeywords struct {
+	Type   string
+	Struct int
+}
