@@ -296,7 +296,7 @@ func testStructFields(t *testing.T, tc structFieldsCase) {
 	fieldNames := []string{}
 	for _, field := range s.Fields {
 		assert.NotEmpty(t, field.Name)
-		fieldNames = append(fieldNames, field.Name)
+		fieldNames = append(fieldNames, field.name)
 	}
 	assert.Len(t, fieldNames, len(tc.expectedStructFields))
 

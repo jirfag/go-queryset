@@ -16,9 +16,21 @@ import (
 
 // StructField represents one field in struct
 type StructField struct {
-	Name string            //
-	Type types.Type        // field/method/parameter type
-	Tag  reflect.StructTag // field tag; or nil
+	name string            //
+	typ  types.Type        // field/method/parameter type
+	tag  reflect.StructTag // field tag; or nil
+}
+
+func (sf StructField) Name() string {
+	return sf.name
+}
+
+func (sf StructField) Type() types.Type {
+	return sf.typ
+}
+
+func (sf StructField) Tag() reflect.StructTag {
+	return sf.tag
 }
 
 // ParsedStructs is a map from struct type name to list of fields
@@ -26,8 +38,9 @@ type ParsedStructs map[string]ParsedStruct
 
 // ParsedStruct represents struct info
 type ParsedStruct struct {
-	Fields []StructField
-	Doc    *ast.CommentGroup // line comments; or nil
+	TypeName string
+	Fields   []StructField
+	Doc      *ast.CommentGroup // line comments; or nil
 }
 
 func fileNameToPkgName(filePath, absFilePath string) string {
@@ -137,6 +150,7 @@ func GetStructsInFile(filePath string) (*loader.PackageInfo, ParsedStructs, erro
 
 		parsedStruct := parseStruct(s, neededStructs[name])
 		if parsedStruct != nil {
+			parsedStruct.TypeName = name
 			ret[name] = *parsedStruct
 		}
 	}
@@ -169,9 +183,9 @@ func parseStruct(s *types.Struct, decl *ast.GenDecl) *ParsedStruct {
 		}
 
 		sf := StructField{
-			Name: f.Name(),
-			Type: f.Type(),
-			Tag:  reflect.StructTag(s.Tag(i)),
+			name: f.Name(),
+			typ:  f.Type(),
+			tag:  reflect.StructTag(s.Tag(i)),
 		}
 
 		fields = append(fields, sf)
