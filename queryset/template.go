@@ -3,15 +3,13 @@ package queryset
 import (
 	"text/template"
 
-	"github.com/jinzhu/gorm"
 	"github.com/jirfag/go-queryset/queryset/methods"
 )
 
 var qsTmpl = template.Must(
 	template.New("generator").
 		Funcs(template.FuncMap{
-			"lcf":      methods.LowercaseFirstRune,
-			"todbname": gorm.ToDBName,
+			"lcf": methods.LowercaseFirstRune,
 		}).
 		Parse(qsCode),
 )
@@ -60,7 +58,7 @@ const qsCode = `
 		{{- end }}
 	}{
 		{{ range .Fields }}
-			{{ .Name }}: {{ $ft }}("{{ .Name | todbname }}"),
+			{{ .Name }}: {{ $ft }}("{{ .DBName }}"),
 		{{- end }}
 	}
 
@@ -68,7 +66,7 @@ const qsCode = `
 	func (o *{{ .StructName }}) Update(db *gorm.DB, fields ...{{ $ft }}) error {
 		dbNameToFieldName := map[string]interface{}{
 			{{- range .Fields }}
-				"{{ .Name | todbname }}": o.{{ .Name }},
+				"{{ .DBName }}": o.{{ .Name }},
 			{{- end }}
 		}
 		u := map[string]interface{}{}

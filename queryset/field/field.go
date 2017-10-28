@@ -3,12 +3,16 @@ package field
 import (
 	"fmt"
 	"go/types"
+	"reflect"
+	"strings"
 
+	"github.com/jinzhu/gorm"
 	"golang.org/x/tools/go/loader"
 )
 
 type BaseInfo struct {
 	Name      string // name of field
+	DBName    string // name of field in DB
 	TypeName  string // name of type of field
 	IsStruct  bool
 	IsNumeric bool
@@ -34,11 +38,13 @@ type InfoGenerator struct {
 type Field interface {
 	Name() string
 	Type() types.Type
+	Tag() reflect.StructTag
 }
 
 type field struct {
 	name string
 	typ  types.Type
+	tag  reflect.StructTag
 }
 
 func (f field) Name() string {
@@ -47,6 +53,10 @@ func (f field) Name() string {
 
 func (f field) Type() types.Type {
 	return f.typ
+}
+
+func (f field) Tag() reflect.StructTag {
+	return f.tag
 }
 
 func NewInfoGenerator(pkgInfo *loader.PackageInfo) *InfoGenerator {
@@ -65,28 +75,53 @@ func (g InfoGenerator) getOriginalTypeName(t *types.Named) string {
 	return fmt.Sprintf("%s.%s", t.Obj().Pkg().Name(), t.Obj().Name())
 }
 
-func (g InfoGenerator) GenFieldInfo(f Field) *Info { // nolint: interfacer
-	typeName := f.Type().String()
+// parseTagSetting is copy-pasted from gorm source code.
+func parseTagSetting(tags reflect.StructTag) map[string]string {
+	setting := map[string]string{}
+	for _, str := range []string{tags.Get("sql"), tags.Get("gorm")} {
+		tags := strings.Split(str, ";")
+		for _, value := range tags {
+			v := strings.Split(value, ":")
+			k := strings.TrimSpace(strings.ToUpper(v[0]))
+			if len(v) >= 2 {
+				setting[k] = strings.Join(v[1:], ":")
+			} else {
+				setting[k] = k
+			}
+		}
+	}
+	return setting
+}
 
-	if typeName == "time.Time" {
+func (g InfoGenerator) GenFieldInfo(f Field) *Info {
+	tagSetting := parseTagSetting(f.Tag())
+	if tagSetting["-"] != "" { // skipped by tag field
+		return nil
+	}
+
+	dbName := gorm.ToDBName(f.Name())
+	if dbColName := tagSetting["COLUMN"]; dbColName != "" {
+		dbName = dbColName
+	}
+	bi := BaseInfo{
+		Name:     f.Name(),
+		TypeName: f.Type().String(),
+		DBName:   dbName,
+	}
+
+	if bi.TypeName == "time.Time" {
+		bi.IsTime = true
+		bi.IsNumeric = true
 		return &Info{
-			BaseInfo: BaseInfo{
-				Name:      f.Name(),
-				TypeName:  typeName,
-				IsNumeric: true,
-				IsTime:    true,
-			},
+			BaseInfo: bi,
 		}
 	}
 
 	switch t := f.Type().(type) {
 	case *types.Basic:
+		bi.IsNumeric = t.Info()&types.IsNumeric != 0
 		return &Info{
-			BaseInfo: BaseInfo{
-				Name:      f.Name(),
-				TypeName:  typeName,
-				IsNumeric: t.Info()&types.IsNumeric != 0,
-			},
+			BaseInfo: bi,
 		}
 	case *types.Named:
 		r := g.GenFieldInfo(field{
@@ -98,12 +133,9 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info { // nolint: interfacer
 		}
 		return r
 	case *types.Struct:
+		bi.IsStruct = true
 		return &Info{
-			BaseInfo: BaseInfo{
-				Name:     f.Name(),
-				TypeName: typeName,
-				IsStruct: true,
-			},
+			BaseInfo: bi,
 		}
 	case *types.Pointer:
 		pf := g.GenFieldInfo(field{
@@ -111,10 +143,7 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info { // nolint: interfacer
 			typ:  t.Elem(),
 		})
 		return &Info{
-			BaseInfo: BaseInfo{
-				Name:     f.Name(),
-				TypeName: typeName,
-			},
+			BaseInfo:  bi,
 			IsPointer: true,
 			pointed:   &pf.BaseInfo,
 		}

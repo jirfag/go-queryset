@@ -4,45 +4,46 @@ import (
 	"github.com/jirfag/go-queryset/parser"
 	"github.com/jirfag/go-queryset/queryset/field"
 	"github.com/jirfag/go-queryset/queryset/methods"
-	"golang.org/x/tools/go/loader"
 )
 
 type methodsBuilder struct {
-	pkgInfo *loader.PackageInfo
-	s       parser.ParsedStruct
-	ret     []methods.Method
+	fields []field.Info
+	s      parser.ParsedStruct
+	ret    []methods.Method
+	sctx   methods.QsStructContext
 }
 
 func (b *methodsBuilder) qsTypeName() string {
 	return b.s.TypeName + "QuerySet"
 }
 
-func newMethodsBuilder(pkgInfo *loader.PackageInfo, s parser.ParsedStruct) *methodsBuilder {
+func newMethodsBuilder(s parser.ParsedStruct, fields []field.Info) *methodsBuilder {
 	return &methodsBuilder{
-		pkgInfo: pkgInfo,
-		s:       s,
+		s:      s,
+		sctx:   methods.NewQsStructContext(s),
+		fields: fields,
 	}
 }
 
-func getQuerySetMethodsForField(f field.Info, qsTypeName string) []methods.Method {
-	fCtx := methods.NewQsFieldContext("", f.Name, f.TypeName, qsTypeName)
+func (b *methodsBuilder) getQuerySetMethodsForField(f field.Info) []methods.Method {
+	fctx := b.sctx.FieldCtx(f)
 	basicTypeMethods := []methods.Method{
-		methods.NewBinaryFilterMethod(fCtx.WithName("eq")),
-		methods.NewBinaryFilterMethod(fCtx.WithName("ne")),
+		methods.NewBinaryFilterMethod(fctx.WithOperationName("eq")),
+		methods.NewBinaryFilterMethod(fctx.WithOperationName("ne")),
 	}
 	if !f.IsTime {
-		inMethod := methods.NewInFilterMethod(fCtx)
-		notInMethod := methods.NewNotInFilterMethod(fCtx)
+		inMethod := methods.NewInFilterMethod(fctx)
+		notInMethod := methods.NewNotInFilterMethod(fctx)
 		basicTypeMethods = append(basicTypeMethods, inMethod, notInMethod)
 	}
 
 	numericMethods := []methods.Method{
-		methods.NewBinaryFilterMethod(fCtx.WithName("lt")),
-		methods.NewBinaryFilterMethod(fCtx.WithName("gt")),
-		methods.NewBinaryFilterMethod(fCtx.WithName("lte")),
-		methods.NewBinaryFilterMethod(fCtx.WithName("gte")),
-		methods.NewOrderAscByMethod(f.Name, qsTypeName),
-		methods.NewOrderDescByMethod(f.Name, qsTypeName),
+		methods.NewBinaryFilterMethod(fctx.WithOperationName("lt")),
+		methods.NewBinaryFilterMethod(fctx.WithOperationName("gt")),
+		methods.NewBinaryFilterMethod(fctx.WithOperationName("lte")),
+		methods.NewBinaryFilterMethod(fctx.WithOperationName("gte")),
+		methods.NewOrderAscByMethod(fctx),
+		methods.NewOrderDescByMethod(fctx),
 	}
 
 	if f.IsNumeric {
@@ -51,14 +52,14 @@ func getQuerySetMethodsForField(f field.Info, qsTypeName string) []methods.Metho
 
 	if f.IsStruct {
 		// Association was found (any struct or struct pointer)
-		return []methods.Method{methods.NewPreloadMethod(f.Name, qsTypeName)}
+		return []methods.Method{methods.NewPreloadMethod(fctx)}
 	}
 
 	if f.IsPointer {
-		ptrMethods := getQuerySetMethodsForField(f.GetPointed(), qsTypeName)
+		ptrMethods := b.getQuerySetMethodsForField(f.GetPointed())
 		return append(ptrMethods,
-			methods.NewIsNullMethod(f.Name, qsTypeName),
-			methods.NewIsNotNullMethod(f.Name, qsTypeName))
+			methods.NewIsNullMethod(fctx),
+			methods.NewIsNotNullMethod(fctx))
 	}
 
 	// it's a string
@@ -66,7 +67,7 @@ func getQuerySetMethodsForField(f field.Info, qsTypeName string) []methods.Metho
 }
 
 func (b *methodsBuilder) buildQuerySetFieldMethods(f field.Info) *methodsBuilder {
-	methods := getQuerySetMethodsForField(f, b.qsTypeName())
+	methods := b.getQuerySetMethodsForField(f)
 	b.ret = append(b.ret, methods...)
 	return b
 }
@@ -131,14 +132,8 @@ func (b methodsBuilder) Build() []methods.Method {
 		buildCRUDMethods().
 		buildUpdaterStructMethods()
 
-	g := field.NewInfoGenerator(b.pkgInfo)
-	for _, f := range b.s.Fields {
-		fi := g.GenFieldInfo(f)
-		if fi == nil {
-			continue
-		}
-
-		b.buildQuerySetFieldMethods(*fi).buildUpdaterFieldMethods(*fi)
+	for _, f := range b.fields {
+		b.buildQuerySetFieldMethods(f).buildUpdaterFieldMethods(f)
 	}
 
 	return b.ret

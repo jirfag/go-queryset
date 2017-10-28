@@ -22,7 +22,7 @@ type User struct {
 type Blog struct {
 	gorm.Model
 
-	Name string
+	Name string `gorm:"column:myname"`
 }
 
 // Post is an article

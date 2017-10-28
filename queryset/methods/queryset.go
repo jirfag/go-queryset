@@ -7,43 +7,66 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/jinzhu/gorm"
+	"github.com/jirfag/go-queryset/parser"
+	"github.com/jirfag/go-queryset/queryset/field"
 )
 
 const qsReceiverName = "qs"
 const qsDbName = qsReceiverName + ".db"
 
+type QsStructContext struct {
+	s parser.ParsedStruct
+}
+
+func NewQsStructContext(s parser.ParsedStruct) QsStructContext {
+	return QsStructContext{
+		s: s,
+	}
+}
+
+func (ctx QsStructContext) qsTypeName() string {
+	return ctx.s.TypeName + "QuerySet"
+}
+
+func (ctx QsStructContext) FieldCtx(f field.Info) QsFieldContext {
+	return QsFieldContext{
+		f:               f,
+		QsStructContext: ctx,
+	}
+}
+
 // QsFieldContext is a query set field context
 type QsFieldContext struct {
-	name, fieldName, fieldTypeName, qsTypeName string
+	f             field.Info
+	operationName string
+
+	QsStructContext
+}
+
+func (ctx QsFieldContext) fieldName() string {
+	return ctx.f.Name
+}
+
+func (ctx QsFieldContext) fieldDBName() string {
+	return ctx.f.DBName
+}
+
+func (ctx QsFieldContext) fieldTypeName() string {
+	return ctx.f.TypeName
 }
 
 func (ctx QsFieldContext) onFieldMethod() onFieldMethod {
-	return newOnFieldMethod(ctx.name, ctx.fieldName)
+	return newOnFieldMethod(ctx.operationName, ctx.fieldName())
 }
 
 func (ctx QsFieldContext) chainedQuerySetMethod() chainedQuerySetMethod {
-	return newChainedQuerySetMethod(ctx.qsTypeName)
+	return newChainedQuerySetMethod(ctx.qsTypeName())
 }
 
-func (ctx QsFieldContext) gormFieldName() string {
-	return gorm.ToDBName(ctx.fieldName)
-}
-
-// WithName return ctx with changed name
-func (ctx QsFieldContext) WithName(name string) QsFieldContext {
-	ctx.name = name
+// WithOperationName return ctx with changed operation's name
+func (ctx QsFieldContext) WithOperationName(operationName string) QsFieldContext {
+	ctx.operationName = operationName
 	return ctx
-}
-
-// NewQsFieldContext creates new QsFieldContext
-func NewQsFieldContext(name, fieldName, fieldTypeName, qsTypeName string) QsFieldContext {
-	return QsFieldContext{
-		name:          name,
-		fieldName:     fieldName,
-		fieldTypeName: fieldTypeName,
-		qsTypeName:    qsTypeName,
-	}
 }
 
 // retQuerySetMethod
@@ -98,14 +121,14 @@ type FieldOperationNoArgsMethod struct {
 
 func newFieldOperationNoArgsMethod(ctx QsFieldContext, transformFieldName bool) FieldOperationNoArgsMethod {
 
-	gormArgName := ctx.fieldName
+	gormArgName := ctx.fieldName()
 	if transformFieldName {
-		gormArgName = ctx.gormFieldName()
+		gormArgName = ctx.fieldDBName()
 	}
 
 	r := FieldOperationNoArgsMethod{
 		onFieldMethod:         ctx.onFieldMethod(),
-		qsCallGormMethod:      newQsCallGormMethod(ctx.name, `"%s"`, gormArgName),
+		qsCallGormMethod:      newQsCallGormMethod(ctx.operationName, `"%s"`, gormArgName),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
 	}
 	r.setFieldNameFirst(false) // UserPreload -> PreloadUser
@@ -218,13 +241,13 @@ type BinaryFilterMethod struct {
 
 // NewBinaryFilterMethod create new binary filter method
 func NewBinaryFilterMethod(ctx QsFieldContext) BinaryFilterMethod {
-	argName := fieldNameToArgName(ctx.fieldName)
+	argName := fieldNameToArgName(ctx.fieldName())
 	return BinaryFilterMethod{
 		onFieldMethod:         ctx.onFieldMethod(),
-		oneArgMethod:          newOneArgMethod(argName, ctx.fieldTypeName),
+		oneArgMethod:          newOneArgMethod(argName, ctx.fieldTypeName()),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
 		qsCallGormMethod: newQsCallGormMethod("Where", `"%s %s", %s`,
-			ctx.gormFieldName(), getWhereCondition(ctx.name), argName),
+			ctx.fieldDBName(), getWhereCondition(ctx.operationName), argName),
 	}
 }
 
@@ -246,19 +269,19 @@ func (m InFilterMethod) GetBody() string {
 	return fmt.Sprintf(tmpl, m.getArgName(0), m.getArgName(1)) + m.qsCallGormMethod.GetBody()
 }
 
-func newInFilterMethodImpl(ctx QsFieldContext, name, sql string) InFilterMethod {
-	ctx = ctx.WithName(name)
-	argName := fieldNameToArgName(ctx.fieldName)
+func newInFilterMethodImpl(ctx QsFieldContext, operationName, sql string) InFilterMethod {
+	ctx = ctx.WithOperationName(operationName)
+	argName := fieldNameToArgName(ctx.fieldName())
 	args := newNArgsMethod(
-		newOneArgMethod(argName, ctx.fieldTypeName),
-		newOneArgMethod(argName+"Rest", "..."+ctx.fieldTypeName),
+		newOneArgMethod(argName, ctx.fieldTypeName()),
+		newOneArgMethod(argName+"Rest", "..."+ctx.fieldTypeName()),
 	)
 	return InFilterMethod{
 		onFieldMethod:         ctx.onFieldMethod(),
 		nArgsMethod:           args,
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
 		qsCallGormMethod: newQsCallGormMethod("Where", `"%s %s (?)", iArgs`,
-			ctx.gormFieldName(), sql),
+			ctx.fieldDBName(), sql),
 	}
 }
 
@@ -299,8 +322,9 @@ type UnaryFilterMethod struct {
 
 func newUnaryFilterMethod(ctx QsFieldContext, op string) UnaryFilterMethod {
 	r := UnaryFilterMethod{
-		onFieldMethod:         ctx.onFieldMethod(),
-		qsCallGormMethod:      newQsCallGormMethod("Where", `"%s %s"`, ctx.gormFieldName(), op),
+		onFieldMethod: ctx.onFieldMethod(),
+		qsCallGormMethod: newQsCallGormMethod("Where", `"%s %s"`,
+			ctx.fieldDBName(), op),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
 	}
 	return r
@@ -385,24 +409,24 @@ func NewCountMethod(qsTypeName string) CountMethod {
 // Concrete methods
 
 // NewPreloadMethod creates new Preload method
-func NewPreloadMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod(NewQsFieldContext("Preload", fieldName, "", qsTypeName), false)
+func NewPreloadMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
+	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("Preload"), false)
 	return r
 }
 
 // NewOrderAscByMethod creates new OrderBy method ascending
-func NewOrderAscByMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod(NewQsFieldContext("OrderAscBy", fieldName, "", qsTypeName), true)
+func NewOrderAscByMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
+	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("OrderAscBy"), true)
 	r.setGormMethodName("Order")
-	r.setGormMethodArgs(fmt.Sprintf(`"%s ASC"`, gorm.ToDBName(fieldName)))
+	r.setGormMethodArgs(fmt.Sprintf(`"%s ASC"`, ctx.fieldDBName()))
 	return r
 }
 
 // NewOrderDescByMethod creates new OrderBy method descending
-func NewOrderDescByMethod(fieldName, qsTypeName string) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod(NewQsFieldContext("OrderDescBy", fieldName, "", qsTypeName), true)
+func NewOrderDescByMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
+	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("OrderDescBy"), true)
 	r.setGormMethodName("Order")
-	r.setGormMethodArgs(fmt.Sprintf(`"%s DESC"`, gorm.ToDBName(fieldName)))
+	r.setGormMethodArgs(fmt.Sprintf(`"%s DESC"`, ctx.fieldDBName()))
 	return r
 }
 
@@ -426,12 +450,11 @@ func NewOneMethod(structName, qsTypeName string) SelectMethod {
 }
 
 // NewIsNullMethod create IsNull method
-func NewIsNullMethod(fieldName, qsTypeName string) UnaryFilterMethod {
-	return newUnaryFilterMethod(NewQsFieldContext("IsNull", fieldName, "", qsTypeName), "IS NULL")
+func NewIsNullMethod(ctx QsFieldContext) UnaryFilterMethod {
+	return newUnaryFilterMethod(ctx.WithOperationName("IsNull"), "IS NULL")
 }
 
 // NewIsNotNullMethod create IsNotNull method
-func NewIsNotNullMethod(fieldName, qsTypeName string) UnaryFilterMethod {
-	return newUnaryFilterMethod(NewQsFieldContext("IsNotNull", fieldName, "", qsTypeName),
-		"IS NOT NULL")
+func NewIsNotNullMethod(ctx QsFieldContext) UnaryFilterMethod {
+	return newUnaryFilterMethod(ctx.WithOperationName("IsNotNull"), "IS NOT NULL")
 }

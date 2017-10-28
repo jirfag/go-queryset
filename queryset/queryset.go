@@ -11,6 +11,7 @@ import (
 	"golang.org/x/tools/go/loader"
 
 	"github.com/jirfag/go-queryset/parser"
+	"github.com/jirfag/go-queryset/queryset/field"
 	"github.com/jirfag/go-queryset/queryset/methods"
 )
 
@@ -18,7 +19,7 @@ type querySetStructConfig struct {
 	StructName string
 	Name       string
 	Methods    methodsSlice
-	Fields     []parser.StructField
+	Fields     []field.Info
 }
 
 type methodsSlice []methods.Method
@@ -55,6 +56,18 @@ func doesNeedToGenerateQuerySet(doc *ast.CommentGroup) bool {
 	return false
 }
 
+func genStructFieldInfos(s parser.ParsedStruct, pkgInfo *loader.PackageInfo) (ret []field.Info) {
+	g := field.NewInfoGenerator(pkgInfo)
+	for _, f := range s.Fields {
+		fi := g.GenFieldInfo(f)
+		if fi == nil {
+			continue
+		}
+		ret = append(ret, *fi)
+	}
+	return ret
+}
+
 func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
 	structs parser.ParsedStructs) querySetStructConfigSlice {
 
@@ -65,14 +78,15 @@ func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
 			continue
 		}
 
-		b := newMethodsBuilder(pkgInfo, s)
+		fields := genStructFieldInfos(s, pkgInfo)
+		b := newMethodsBuilder(s, fields)
 		methods := b.Build()
 
 		qsConfig := querySetStructConfig{
 			StructName: s.TypeName,
 			Name:       s.TypeName + "QuerySet",
 			Methods:    methods,
-			Fields:     s.Fields,
+			Fields:     fields,
 		}
 		sort.Sort(qsConfig.Methods)
 		querySetStructConfigs = append(querySetStructConfigs, qsConfig)
