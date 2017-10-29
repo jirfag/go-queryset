@@ -30,10 +30,11 @@ type Blog struct {
 type Post struct {
 	gorm.Model
 
-	Blog  *Blog // may be no blog
-	User  User
-	Title *string
-	Str   tmp.StringDef
+	Blog   *Blog // may be no blog
+	User   User
+	Title  *string
+	Str    tmp.StringDef
+	Unused int `gorm:"-"`
 }
 
 // String is just for testing purposes

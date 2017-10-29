@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	"golang.org/x/tools/go/loader"
 )
 
 type BaseInfo struct {
@@ -32,7 +31,7 @@ func (fi Info) GetPointed() Info {
 }
 
 type InfoGenerator struct {
-	pkgInfo *loader.PackageInfo
+	pkg *types.Package
 }
 
 type Field interface {
@@ -59,14 +58,14 @@ func (f field) Tag() reflect.StructTag {
 	return f.tag
 }
 
-func NewInfoGenerator(pkgInfo *loader.PackageInfo) *InfoGenerator {
+func NewInfoGenerator(pkg *types.Package) *InfoGenerator {
 	return &InfoGenerator{
-		pkgInfo: pkgInfo,
+		pkg: pkg,
 	}
 }
 
 func (g InfoGenerator) getOriginalTypeName(t *types.Named) string {
-	if t.Obj().Pkg() == g.pkgInfo.Pkg {
+	if t.Obj().Pkg() == g.pkg {
 		// t is from the same package as a struct
 		return t.Obj().Name()
 	}
@@ -127,6 +126,7 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info {
 		r := g.GenFieldInfo(field{
 			name: f.Name(),
 			typ:  t.Underlying(),
+			tag:  f.Tag(),
 		})
 		if r != nil {
 			r.TypeName = g.getOriginalTypeName(t)

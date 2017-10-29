@@ -57,7 +57,7 @@ func doesNeedToGenerateQuerySet(doc *ast.CommentGroup) bool {
 }
 
 func genStructFieldInfos(s parser.ParsedStruct, pkgInfo *loader.PackageInfo) (ret []field.Info) {
-	g := field.NewInfoGenerator(pkgInfo)
+	g := field.NewInfoGenerator(pkgInfo.Pkg)
 	for _, f := range s.Fields {
 		fi := g.GenFieldInfo(f)
 		if fi == nil {
