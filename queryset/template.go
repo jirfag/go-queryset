@@ -51,6 +51,10 @@ const qsCode = `
 	{{ $ft := printf "%s%s" .StructName "DBSchemaField" | lcf }}
 	type {{ $ft }} string
 
+	func (f {{ $ft }}) String() string {
+		return string(f)
+	}
+
 	// {{ .StructName }}DBSchema stores db field names of {{ .StructName }}
 	var {{ .StructName }}DBSchema = struct {
 		{{ range .Fields }}
@@ -71,7 +75,7 @@ const qsCode = `
 		}
 		u := map[string]interface{}{}
 		for _, f := range fields {
-			fs := string(f)
+			fs := f.String()
 			u[fs] = dbNameToFieldName[fs]
 		}
 		if err := db.Model(o).Updates(u).Error; err != nil {

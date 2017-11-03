@@ -388,6 +388,10 @@ func (qs BlogQuerySet) UpdatedAtNe(updatedAt time.Time) BlogQuerySet {
 
 type blogDBSchemaField string
 
+func (f blogDBSchemaField) String() string {
+	return string(f)
+}
+
 // BlogDBSchema stores db field names of Blog
 var BlogDBSchema = struct {
 	ID        blogDBSchemaField
@@ -415,7 +419,7 @@ func (o *Blog) Update(db *gorm.DB, fields ...blogDBSchemaField) error {
 	}
 	u := map[string]interface{}{}
 	for _, f := range fields {
-		fs := string(f)
+		fs := f.String()
 		u[fs] = dbNameToFieldName[fs]
 	}
 	if err := db.Model(o).Updates(u).Error; err != nil {
@@ -647,6 +651,10 @@ func (u CheckReservedKeywordsUpdater) UpdateNum() (int64, error) {
 
 type checkReservedKeywordsDBSchemaField string
 
+func (f checkReservedKeywordsDBSchemaField) String() string {
+	return string(f)
+}
+
 // CheckReservedKeywordsDBSchema stores db field names of CheckReservedKeywords
 var CheckReservedKeywordsDBSchema = struct {
 	Type   checkReservedKeywordsDBSchemaField
@@ -665,7 +673,7 @@ func (o *CheckReservedKeywords) Update(db *gorm.DB, fields ...checkReservedKeywo
 	}
 	u := map[string]interface{}{}
 	for _, f := range fields {
-		fs := string(f)
+		fs := f.String()
 		u[fs] = dbNameToFieldName[fs]
 	}
 	if err := db.Model(o).Updates(u).Error; err != nil {
@@ -1156,6 +1164,10 @@ func (qs PostQuerySet) UpdatedAtNe(updatedAt time.Time) PostQuerySet {
 
 type postDBSchemaField string
 
+func (f postDBSchemaField) String() string {
+	return string(f)
+}
+
 // PostDBSchema stores db field names of Post
 var PostDBSchema = struct {
 	ID        postDBSchemaField
@@ -1192,7 +1204,7 @@ func (o *Post) Update(db *gorm.DB, fields ...postDBSchemaField) error {
 	}
 	u := map[string]interface{}{}
 	for _, f := range fields {
-		fs := string(f)
+		fs := f.String()
 		u[fs] = dbNameToFieldName[fs]
 	}
 	if err := db.Model(o).Updates(u).Error; err != nil {
@@ -1640,6 +1652,10 @@ func (qs UserQuerySet) UpdatedAtNe(updatedAt time.Time) UserQuerySet {
 
 type userDBSchemaField string
 
+func (f userDBSchemaField) String() string {
+	return string(f)
+}
+
 // UserDBSchema stores db field names of User
 var UserDBSchema = struct {
 	ID        userDBSchemaField
@@ -1670,7 +1686,7 @@ func (o *User) Update(db *gorm.DB, fields ...userDBSchemaField) error {
 	}
 	u := map[string]interface{}{}
 	for _, f := range fields {
-		fs := string(f)
+		fs := f.String()
 		u[fs] = dbNameToFieldName[fs]
 	}
 	if err := db.Model(o).Updates(u).Error; err != nil {
