@@ -13,8 +13,9 @@ type User struct {
 	gorm.Model
 
 	//Posts []Post
-	Name  string
-	Email string
+	Name    string
+	Surname *string `gorm:"column:user_surname"`
+	Email   string
 }
 
 // Blog is a blog
