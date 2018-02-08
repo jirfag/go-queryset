@@ -52,7 +52,7 @@ func fileNameToPkgName(filePath, absFilePath string) string {
 	}
 
 	r := strings.TrimPrefix(dir, gopath)
-	r = strings.TrimPrefix(r, "/") // may be and may not be
+	r = strings.TrimPrefix(r, "/")  // may be and may not be
 	r = strings.TrimPrefix(r, "\\") // may be and may not be
 	r = strings.TrimPrefix(r, "src/")
 	r = strings.TrimPrefix(r, "src\\")
