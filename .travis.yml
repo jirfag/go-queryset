@@ -5,7 +5,9 @@ go:
   - 1.9.x
 before_install:
   - go get github.com/mattn/goveralls
-  - go get -u github.com/alecthomas/gometalinter
+  - go get github.com/alecthomas/gometalinter
+  - go get github.com/golang/dep/cmd/dep
+  - dep ensure -v
   - gometalinter --install --vendored-linters
 script:
   - make test
