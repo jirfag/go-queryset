@@ -141,6 +141,7 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info {
 		pf := g.GenFieldInfo(field{
 			name: f.Name(),
 			typ:  t.Elem(),
+			tag:  f.Tag(),
 		})
 		return &Info{
 			BaseInfo:  bi,

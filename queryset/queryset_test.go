@@ -43,10 +43,10 @@ func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 }
 
 func getRowsForUsers(users []test.User) *sqlmock.Rows {
-	var userFieldNames = []string{"id", "name", "email", "created_at", "updated_at", "deleted_at"}
+	var userFieldNames = []string{"id", "name", "user_surname", "email", "created_at", "updated_at", "deleted_at"}
 	rows := sqlmock.NewRows(userFieldNames)
 	for _, u := range users {
-		rows = rows.AddRow(u.ID, u.Name, u.Email, u.CreatedAt, u.UpdatedAt, u.DeletedAt)
+		rows = rows.AddRow(u.ID, u.Name, u.Surname, u.Email, u.CreatedAt, u.UpdatedAt, u.DeletedAt)
 	}
 	return rows
 }
@@ -109,7 +109,9 @@ func TestQueries(t *testing.T) {
 		testUserSelectAll,
 		testUserSelectAllNoRecords,
 		testUserSelectOne,
+		testUserSelectWithSurnameFilter,
 		testUserCreateOne,
+		testUserCreateOneWithSurname,
 		testUserUpdateFieldsByPK,
 		testUserUpdateByEmail,
 		testUserDeleteByEmail,
@@ -159,6 +161,22 @@ func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 	var user test.User
 	assert.Nil(t, test.NewUserQuerySet(db).One(&user))
+	assert.Equal(t, expUsers[0], user)
+}
+
+func testUserSelectWithSurnameFilter(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(1)
+
+	surname := "Ivanov"
+	expUsers[0].Surname = &surname
+
+	req := "SELECT * FROM `users` " +
+		"WHERE `users`.deleted_at IS NULL AND ((user_surname = ?)) ORDER BY `users`.`id` ASC LIMIT 1"
+	m.ExpectQuery(fixedFullRe(req)).
+		WillReturnRows(getRowsForUsers(expUsers))
+
+	var user test.User
+	assert.Nil(t, test.NewUserQuerySet(db).SurnameEq(surname).One(&user))
 	assert.Equal(t, expUsers[0], user)
 }
 
@@ -221,9 +239,28 @@ func runUserQueryFilterSubTest(t *testing.T, c userQueryTestCase, m sqlmock.Sqlm
 
 func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUserNoID()
-	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`email`) VALUES (?,?,?,?,?)"
+	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`) " +
+		"VALUES (?,?,?,?,?,?)"
+
 	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-		u.Name, u.Email}
+		u.Name, nil, u.Email}
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(args...).
+		WillReturnResult(sqlmock.NewResult(2, 1))
+	assert.Nil(t, u.Create(db))
+	assert.Equal(t, uint(2), u.ID)
+}
+
+func testUserCreateOneWithSurname(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	u := getUserNoID()
+	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`) " +
+		"VALUES (?,?,?,?,?,?)"
+
+	surname := "Ivanov"
+	u.Surname = &surname
+
+	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
+		u.Name, &surname, u.Email}
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(args...).
 		WillReturnResult(sqlmock.NewResult(2, 1))
