@@ -1,4 +1,5 @@
 test_static:
+	go install ./...
 	gometalinter --vendor --enable-all --min-confidence=0.3 --line-length=120 \
 		-e "parameter \w+ always receives" \
 		-e "/jinzhu/gorm/" \
