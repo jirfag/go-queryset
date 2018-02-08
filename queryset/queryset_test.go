@@ -171,7 +171,7 @@ func testUserSelectWithSurnameFilter(t *testing.T, m sqlmock.Sqlmock, db *gorm.D
 	expUsers[0].Surname = &surname
 
 	req := "SELECT * FROM `users` " +
-		"WHERE `users`.deleted_at IS NULL AND ((user_surname = ?)) ORDER BY `users`.`id` ASC LIMIT 1"
+		"WHERE `users`.deleted_at IS NULL AND ((`user_surname` = ?)) ORDER BY `users`.`id` ASC LIMIT 1"
 	m.ExpectQuery(fixedFullRe(req)).
 		WillReturnRows(getRowsForUsers(expUsers))
 
@@ -191,28 +191,28 @@ type userQueryTestCase struct {
 func testUserQueryFilters(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	cases := []userQueryTestCase{
 		{
-			q:    "((name IN (?)))",
+			q:    "((`name` IN (?)))",
 			args: []driver.Value{"a"},
 			qs: func(qs test.UserQuerySet) test.UserQuerySet {
 				return qs.NameIn("a")
 			},
 		},
 		{
-			q:    "((name IN (?,?)))",
+			q:    "((`name` IN (?,?)))",
 			args: []driver.Value{"a", "b"},
 			qs: func(qs test.UserQuerySet) test.UserQuerySet {
 				return qs.NameIn("a", "b")
 			},
 		},
 		{
-			q:    "((name NOT IN (?)))",
+			q:    "((`name` NOT IN (?)))",
 			args: []driver.Value{"a"},
 			qs: func(qs test.UserQuerySet) test.UserQuerySet {
 				return qs.NameNotIn("a")
 			},
 		},
 		{
-			q:    "((name NOT IN (?,?)))",
+			q:    "((`name` NOT IN (?,?)))",
 			args: []driver.Value{"a", "b"},
 			qs: func(qs test.UserQuerySet) test.UserQuerySet {
 				return qs.NameNotIn("a", "b")
@@ -270,7 +270,7 @@ func testUserCreateOneWithSurname(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) 
 
 func testUserUpdateByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((email = ?))"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((`email` = ?))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(u.Name, u.Email).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -295,7 +295,7 @@ func testUserUpdateFieldsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserDeleteByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET deleted_at=? WHERE `users`.deleted_at IS NULL AND ((email = ?))"
+	req := "UPDATE `users` SET deleted_at=? WHERE `users`.deleted_at IS NULL AND ((`email` = ?))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(sqlmock.AnyArg(), u.Email).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -319,7 +319,7 @@ func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 func testUsersUpdateNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	usersNum := 2
 	users := getTestUsers(usersNum)
-	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((email IN (?,?)))"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((`email` IN (?,?)))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(sqlmock.AnyArg(), users[0].Email, users[1].Email).
 		WillReturnResult(sqlmock.NewResult(0, int64(usersNum)))
@@ -335,7 +335,7 @@ func testUsersUpdateNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUsersCount(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expCount := 5
-	req := "SELECT count(*) FROM `users` WHERE `users`.deleted_at IS NULL AND ((name != ?))"
+	req := "SELECT count(*) FROM `users` WHERE `users`.deleted_at IS NULL AND ((`name` != ?))"
 	m.ExpectQuery(fixedFullRe(req)).WithArgs(driver.Value("")).
 		WillReturnRows(getRowWithFields([]driver.Value{expCount}))
 

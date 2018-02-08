@@ -246,7 +246,7 @@ func NewBinaryFilterMethod(ctx QsFieldContext) BinaryFilterMethod {
 		onFieldMethod:         ctx.onFieldMethod(),
 		oneArgMethod:          newOneArgMethod(argName, ctx.fieldTypeName()),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
-		qsCallGormMethod: newQsCallGormMethod("Where", `"%s %s", %s`,
+		qsCallGormMethod: newQsCallGormMethod("Where", "\"`%s` %s\", %s",
 			ctx.fieldDBName(), getWhereCondition(ctx.operationName), argName),
 	}
 }
@@ -280,7 +280,7 @@ func newInFilterMethodImpl(ctx QsFieldContext, operationName, sql string) InFilt
 		onFieldMethod:         ctx.onFieldMethod(),
 		nArgsMethod:           args,
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
-		qsCallGormMethod: newQsCallGormMethod("Where", `"%s %s (?)", iArgs`,
+		qsCallGormMethod: newQsCallGormMethod("Where", "\"`%s` %s (?)\", iArgs",
 			ctx.fieldDBName(), sql),
 	}
 }
