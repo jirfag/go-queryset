@@ -11,7 +11,7 @@ test_static:
 		--deadline=5m \
 		./...
 
-test_unit:
+test_unit: test_gen
 	mkdir -p test
 	go test -v ./parser/ ./queryset/ ./queryset/methods/
 
@@ -25,7 +25,7 @@ test_gen: gen
 		go build $$(dirname $F)/*.go; \
 	)
 
-test: test_unit bench test_static test_gen
+test: test_unit bench test_static
 
 bench:
 	go test -bench=. -benchtime=1s -v -run=^$$ ./queryset/
