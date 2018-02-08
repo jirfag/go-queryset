@@ -370,7 +370,7 @@ func (u UserUpdater) Update() error
 ```
 
 # Golang version
-Golang >= 1.7 is required. Tested on go 1.7, 1.8, 1.9 versions by [Travis CI](https://travis-ci.org/jirfag/go-queryset)
+Golang >= 1.8 is required. Tested on go 1.8, 1.9 versions by [Travis CI](https://travis-ci.org/jirfag/go-queryset)
 
 # Why?
 ## Why not just use GORM?
