@@ -60,7 +60,8 @@ func getRowWithFields(fields []driver.Value) *sqlmock.Rows {
 	return sqlmock.NewRows(fieldNames).AddRow(fields...)
 }
 
-func getTestUsers(n int) (ret []test.User) {
+func getTestUsers(n int) []test.User {
+	ret := []test.User{}
 	for i := 0; i < n; i++ {
 		u := test.User{
 			Model: gorm.Model{
@@ -73,7 +74,8 @@ func getTestUsers(n int) (ret []test.User) {
 		}
 		ret = append(ret, u)
 	}
-	return
+
+	return ret
 }
 
 func getUserNoID() test.User {

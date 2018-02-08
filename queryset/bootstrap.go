@@ -70,7 +70,7 @@ import (
 	}
 
 	var outF *os.File
-	outF, err = os.OpenFile(outFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0640)
+	outF, err = os.OpenFile(outFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0640) // nolint: gas
 	if err != nil {
 		return fmt.Errorf("can't open out file: %s", err)
 	}
