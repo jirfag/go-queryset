@@ -2,15 +2,10 @@ package queryset
 
 import (
 	"text/template"
-
-	"github.com/jirfag/go-queryset/queryset/methods"
 )
 
 var qsTmpl = template.Must(
 	template.New("generator").
-		Funcs(template.FuncMap{
-			"lcf": methods.LowercaseFirstRune,
-		}).
 		Parse(qsCode),
 )
 
@@ -48,7 +43,8 @@ const qsCode = `
 
 	// ===== BEGIN of {{ .StructName }} modifiers
 
-	{{ $ft := printf "%s%s" .StructName "DBSchemaField" | lcf }}
+	{{ $ft := printf "%s%s" .StructName "DBSchemaField" }}
+	// {{ $ft }} describes database schema field. It requires for method 'Update'
 	type {{ $ft }} string
 
 	func (f {{ $ft }}) String() string {

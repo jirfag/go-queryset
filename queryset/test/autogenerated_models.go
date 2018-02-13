@@ -386,30 +386,31 @@ func (qs BlogQuerySet) UpdatedAtNe(updatedAt time.Time) BlogQuerySet {
 
 // ===== BEGIN of Blog modifiers
 
-type blogDBSchemaField string
+// BlogDBSchemaField describes database schema field. It requires for method 'Update'
+type BlogDBSchemaField string
 
-func (f blogDBSchemaField) String() string {
+func (f BlogDBSchemaField) String() string {
 	return string(f)
 }
 
 // BlogDBSchema stores db field names of Blog
 var BlogDBSchema = struct {
-	ID        blogDBSchemaField
-	CreatedAt blogDBSchemaField
-	UpdatedAt blogDBSchemaField
-	DeletedAt blogDBSchemaField
-	Name      blogDBSchemaField
+	ID        BlogDBSchemaField
+	CreatedAt BlogDBSchemaField
+	UpdatedAt BlogDBSchemaField
+	DeletedAt BlogDBSchemaField
+	Name      BlogDBSchemaField
 }{
 
-	ID:        blogDBSchemaField("id"),
-	CreatedAt: blogDBSchemaField("created_at"),
-	UpdatedAt: blogDBSchemaField("updated_at"),
-	DeletedAt: blogDBSchemaField("deleted_at"),
-	Name:      blogDBSchemaField("myname"),
+	ID:        BlogDBSchemaField("id"),
+	CreatedAt: BlogDBSchemaField("created_at"),
+	UpdatedAt: BlogDBSchemaField("updated_at"),
+	DeletedAt: BlogDBSchemaField("deleted_at"),
+	Name:      BlogDBSchemaField("myname"),
 }
 
 // Update updates Blog fields by primary key
-func (o *Blog) Update(db *gorm.DB, fields ...blogDBSchemaField) error {
+func (o *Blog) Update(db *gorm.DB, fields ...BlogDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"id":         o.ID,
 		"created_at": o.CreatedAt,
@@ -649,24 +650,25 @@ func (u CheckReservedKeywordsUpdater) UpdateNum() (int64, error) {
 
 // ===== BEGIN of CheckReservedKeywords modifiers
 
-type checkReservedKeywordsDBSchemaField string
+// CheckReservedKeywordsDBSchemaField describes database schema field. It requires for method 'Update'
+type CheckReservedKeywordsDBSchemaField string
 
-func (f checkReservedKeywordsDBSchemaField) String() string {
+func (f CheckReservedKeywordsDBSchemaField) String() string {
 	return string(f)
 }
 
 // CheckReservedKeywordsDBSchema stores db field names of CheckReservedKeywords
 var CheckReservedKeywordsDBSchema = struct {
-	Type   checkReservedKeywordsDBSchemaField
-	Struct checkReservedKeywordsDBSchemaField
+	Type   CheckReservedKeywordsDBSchemaField
+	Struct CheckReservedKeywordsDBSchemaField
 }{
 
-	Type:   checkReservedKeywordsDBSchemaField("type"),
-	Struct: checkReservedKeywordsDBSchemaField("struct"),
+	Type:   CheckReservedKeywordsDBSchemaField("type"),
+	Struct: CheckReservedKeywordsDBSchemaField("struct"),
 }
 
 // Update updates CheckReservedKeywords fields by primary key
-func (o *CheckReservedKeywords) Update(db *gorm.DB, fields ...checkReservedKeywordsDBSchemaField) error {
+func (o *CheckReservedKeywords) Update(db *gorm.DB, fields ...CheckReservedKeywordsDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"type":   o.Type,
 		"struct": o.Struct,
@@ -1162,36 +1164,37 @@ func (qs PostQuerySet) UpdatedAtNe(updatedAt time.Time) PostQuerySet {
 
 // ===== BEGIN of Post modifiers
 
-type postDBSchemaField string
+// PostDBSchemaField describes database schema field. It requires for method 'Update'
+type PostDBSchemaField string
 
-func (f postDBSchemaField) String() string {
+func (f PostDBSchemaField) String() string {
 	return string(f)
 }
 
 // PostDBSchema stores db field names of Post
 var PostDBSchema = struct {
-	ID        postDBSchemaField
-	CreatedAt postDBSchemaField
-	UpdatedAt postDBSchemaField
-	DeletedAt postDBSchemaField
-	Blog      postDBSchemaField
-	User      postDBSchemaField
-	Title     postDBSchemaField
-	Str       postDBSchemaField
+	ID        PostDBSchemaField
+	CreatedAt PostDBSchemaField
+	UpdatedAt PostDBSchemaField
+	DeletedAt PostDBSchemaField
+	Blog      PostDBSchemaField
+	User      PostDBSchemaField
+	Title     PostDBSchemaField
+	Str       PostDBSchemaField
 }{
 
-	ID:        postDBSchemaField("id"),
-	CreatedAt: postDBSchemaField("created_at"),
-	UpdatedAt: postDBSchemaField("updated_at"),
-	DeletedAt: postDBSchemaField("deleted_at"),
-	Blog:      postDBSchemaField("blog"),
-	User:      postDBSchemaField("user"),
-	Title:     postDBSchemaField("title"),
-	Str:       postDBSchemaField("str"),
+	ID:        PostDBSchemaField("id"),
+	CreatedAt: PostDBSchemaField("created_at"),
+	UpdatedAt: PostDBSchemaField("updated_at"),
+	DeletedAt: PostDBSchemaField("deleted_at"),
+	Blog:      PostDBSchemaField("blog"),
+	User:      PostDBSchemaField("user"),
+	Title:     PostDBSchemaField("title"),
+	Str:       PostDBSchemaField("str"),
 }
 
 // Update updates Post fields by primary key
-func (o *Post) Update(db *gorm.DB, fields ...postDBSchemaField) error {
+func (o *Post) Update(db *gorm.DB, fields ...PostDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"id":         o.ID,
 		"created_at": o.CreatedAt,
@@ -1701,34 +1704,35 @@ func (qs UserQuerySet) UpdatedAtNe(updatedAt time.Time) UserQuerySet {
 
 // ===== BEGIN of User modifiers
 
-type userDBSchemaField string
+// UserDBSchemaField describes database schema field. It requires for method 'Update'
+type UserDBSchemaField string
 
-func (f userDBSchemaField) String() string {
+func (f UserDBSchemaField) String() string {
 	return string(f)
 }
 
 // UserDBSchema stores db field names of User
 var UserDBSchema = struct {
-	ID        userDBSchemaField
-	CreatedAt userDBSchemaField
-	UpdatedAt userDBSchemaField
-	DeletedAt userDBSchemaField
-	Name      userDBSchemaField
-	Surname   userDBSchemaField
-	Email     userDBSchemaField
+	ID        UserDBSchemaField
+	CreatedAt UserDBSchemaField
+	UpdatedAt UserDBSchemaField
+	DeletedAt UserDBSchemaField
+	Name      UserDBSchemaField
+	Surname   UserDBSchemaField
+	Email     UserDBSchemaField
 }{
 
-	ID:        userDBSchemaField("id"),
-	CreatedAt: userDBSchemaField("created_at"),
-	UpdatedAt: userDBSchemaField("updated_at"),
-	DeletedAt: userDBSchemaField("deleted_at"),
-	Name:      userDBSchemaField("name"),
-	Surname:   userDBSchemaField("user_surname"),
-	Email:     userDBSchemaField("email"),
+	ID:        UserDBSchemaField("id"),
+	CreatedAt: UserDBSchemaField("created_at"),
+	UpdatedAt: UserDBSchemaField("updated_at"),
+	DeletedAt: UserDBSchemaField("deleted_at"),
+	Name:      UserDBSchemaField("name"),
+	Surname:   UserDBSchemaField("user_surname"),
+	Email:     UserDBSchemaField("email"),
 }
 
 // Update updates User fields by primary key
-func (o *User) Update(db *gorm.DB, fields ...userDBSchemaField) error {
+func (o *User) Update(db *gorm.DB, fields ...UserDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"id":           o.ID,
 		"created_at":   o.CreatedAt,
