@@ -57,7 +57,7 @@ type User struct {
 }
 ```
 
-Take a loot at line `// gen:qs`. It's a necessary line to enable querysets for this struct. You can put it at any line in struct's doc-comment.
+Take a look at line `// gen:qs`. It's a necessary line to enable querysets for this struct. You can put it at any line in struct's doc-comment.
 
 Then execute next shell command:
 ```bash
