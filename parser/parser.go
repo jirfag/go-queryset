@@ -160,7 +160,15 @@ func GetStructsInFile(filePath string) (*loader.PackageInfo, ParsedStructs, erro
 	return pkgInfo, ret, nil
 }
 
-func parseStruct(s *types.Struct, decl *ast.GenDecl) *ParsedStruct {
+func newStructField(f *types.Var, tag string) *StructField {
+	return &StructField{
+		name: f.Name(),
+		typ:  f.Type(),
+		tag:  reflect.StructTag(tag),
+	}
+}
+
+func parseStructFields(s *types.Struct) []StructField {
 	var fields []StructField
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
@@ -170,13 +178,17 @@ func parseStruct(s *types.Struct, decl *ast.GenDecl) *ParsedStruct {
 		}
 
 		if f.Anonymous() {
-			e := f.Type().Underlying().(*types.Struct)
-			pe := parseStruct(e, nil)
-			if pe == nil {
+			e, ok := f.Type().Underlying().(*types.Struct)
+			if !ok {
 				continue
 			}
 
-			fields = append(fields, pe.Fields...)
+			pf := parseStructFields(e)
+			if len(pf) == 0 {
+				continue
+			}
+
+			fields = append(fields, pf...)
 			continue
 		}
 
@@ -184,17 +196,17 @@ func parseStruct(s *types.Struct, decl *ast.GenDecl) *ParsedStruct {
 			continue
 		}
 
-		sf := StructField{
-			name: f.Name(),
-			typ:  f.Type(),
-			tag:  reflect.StructTag(s.Tag(i)),
-		}
-
-		fields = append(fields, sf)
+		sf := newStructField(f, s.Tag(i))
+		fields = append(fields, *sf)
 	}
 
+	return fields
+}
+
+func parseStruct(s *types.Struct, decl *ast.GenDecl) *ParsedStruct {
+	fields := parseStructFields(s)
 	if len(fields) == 0 {
-		// e.g. no exportd fields in struct
+		// e.g. no exported fields in struct
 		return nil
 	}
 
