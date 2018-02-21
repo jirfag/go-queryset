@@ -47,6 +47,8 @@ const qsCode = `
 	// {{ $ft }} describes database schema field. It requires for method 'Update'
 	type {{ $ft }} string
 
+	// String method returns string representation of field.
+	// nolint: dupl
 	func (f {{ $ft }}) String() string {
 		return string(f)
 	}
@@ -63,6 +65,7 @@ const qsCode = `
 	}
 
 	// Update updates {{ .StructName }} fields by primary key
+	// nolint: dupl
 	func (o *{{ .StructName }}) Update(db *gorm.DB, fields ...{{ $ft }}) error {
 		dbNameToFieldName := map[string]interface{}{
 			{{- range .Fields }}
@@ -93,6 +96,7 @@ const qsCode = `
 	}
 
 	// New{{ .StructName }}Updater creates new {{ .StructName }} updater
+	// nolint: dupl
 	func New{{ .StructName }}Updater(db *gorm.DB) {{ .StructName }}Updater {
 		return {{ .StructName }}Updater{
 			fields: map[string]interface{}{},

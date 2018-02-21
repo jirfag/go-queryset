@@ -390,6 +390,8 @@ func (qs BlogQuerySet) UpdatedAtNe(updatedAt time.Time) BlogQuerySet {
 // BlogDBSchemaField describes database schema field. It requires for method 'Update'
 type BlogDBSchemaField string
 
+// String method returns string representation of field.
+// nolint: dupl
 func (f BlogDBSchemaField) String() string {
 	return string(f)
 }
@@ -411,6 +413,7 @@ var BlogDBSchema = struct {
 }
 
 // Update updates Blog fields by primary key
+// nolint: dupl
 func (o *Blog) Update(db *gorm.DB, fields ...BlogDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"id":         o.ID,
@@ -443,6 +446,7 @@ type BlogUpdater struct {
 }
 
 // NewBlogUpdater creates new Blog updater
+// nolint: dupl
 func NewBlogUpdater(db *gorm.DB) BlogUpdater {
 	return BlogUpdater{
 		fields: map[string]interface{}{},
@@ -654,6 +658,8 @@ func (u CheckReservedKeywordsUpdater) UpdateNum() (int64, error) {
 // CheckReservedKeywordsDBSchemaField describes database schema field. It requires for method 'Update'
 type CheckReservedKeywordsDBSchemaField string
 
+// String method returns string representation of field.
+// nolint: dupl
 func (f CheckReservedKeywordsDBSchemaField) String() string {
 	return string(f)
 }
@@ -669,6 +675,7 @@ var CheckReservedKeywordsDBSchema = struct {
 }
 
 // Update updates CheckReservedKeywords fields by primary key
+// nolint: dupl
 func (o *CheckReservedKeywords) Update(db *gorm.DB, fields ...CheckReservedKeywordsDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"type":   o.Type,
@@ -698,6 +705,7 @@ type CheckReservedKeywordsUpdater struct {
 }
 
 // NewCheckReservedKeywordsUpdater creates new CheckReservedKeywords updater
+// nolint: dupl
 func NewCheckReservedKeywordsUpdater(db *gorm.DB) CheckReservedKeywordsUpdater {
 	return CheckReservedKeywordsUpdater{
 		fields: map[string]interface{}{},
@@ -1168,6 +1176,8 @@ func (qs PostQuerySet) UpdatedAtNe(updatedAt time.Time) PostQuerySet {
 // PostDBSchemaField describes database schema field. It requires for method 'Update'
 type PostDBSchemaField string
 
+// String method returns string representation of field.
+// nolint: dupl
 func (f PostDBSchemaField) String() string {
 	return string(f)
 }
@@ -1195,6 +1205,7 @@ var PostDBSchema = struct {
 }
 
 // Update updates Post fields by primary key
+// nolint: dupl
 func (o *Post) Update(db *gorm.DB, fields ...PostDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"id":         o.ID,
@@ -1230,6 +1241,7 @@ type PostUpdater struct {
 }
 
 // NewPostUpdater creates new Post updater
+// nolint: dupl
 func NewPostUpdater(db *gorm.DB) PostUpdater {
 	return PostUpdater{
 		fields: map[string]interface{}{},
@@ -1708,6 +1720,8 @@ func (qs UserQuerySet) UpdatedAtNe(updatedAt time.Time) UserQuerySet {
 // UserDBSchemaField describes database schema field. It requires for method 'Update'
 type UserDBSchemaField string
 
+// String method returns string representation of field.
+// nolint: dupl
 func (f UserDBSchemaField) String() string {
 	return string(f)
 }
@@ -1733,6 +1747,7 @@ var UserDBSchema = struct {
 }
 
 // Update updates User fields by primary key
+// nolint: dupl
 func (o *User) Update(db *gorm.DB, fields ...UserDBSchemaField) error {
 	dbNameToFieldName := map[string]interface{}{
 		"id":           o.ID,
@@ -1767,6 +1782,7 @@ type UserUpdater struct {
 }
 
 // NewUserUpdater creates new User updater
+// nolint: dupl
 func NewUserUpdater(db *gorm.DB) UserUpdater {
 	return UserUpdater{
 		fields: map[string]interface{}{},
