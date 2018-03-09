@@ -159,7 +159,7 @@ var users []User
 err := NewUserQuerySet(getGormDB()).
 	RatingMarksGte(minMarks).
 	OrderDescByRating().
-	Limit(N)
+	Limit(N).
 	All(&users)
 ```
 
@@ -176,7 +176,7 @@ var users []User
 err := NewUserQuerySet(getGormDB()).
 	RegisteredToday().
 	OrderDescByCreatedAt().
-	Limit(N)
+	Limit(N).
 	All(&users)
 ```
 
