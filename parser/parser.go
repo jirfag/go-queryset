@@ -45,13 +45,20 @@ type ParsedStruct struct {
 
 func fileNameToPkgName(filePath, absFilePath string) string {
 	dir := filepath.Dir(absFilePath)
-	gopath := os.Getenv("GOPATH")
-	if !strings.HasPrefix(dir, gopath) {
+	gopathEnv := os.Getenv("GOPATH")
+	gopaths := strings.Split(gopathEnv, string(os.PathListSeparator))
+	var inGoPath string
+	for _, gopath := range gopaths {
+		if strings.HasPrefix(dir, gopath) {
+			inGoPath = gopath
+			break
+		}
+	}
+	if inGoPath == "" {
 		// not in GOPATH
 		return "./" + filepath.Dir(filePath)
 	}
-
-	r := strings.TrimPrefix(dir, gopath)
+	r := strings.TrimPrefix(dir, inGoPath)
 	r = strings.TrimPrefix(r, "/")  // may be and may not be
 	r = strings.TrimPrefix(r, "\\") // may be and may not be
 	r = strings.TrimPrefix(r, "src/")
