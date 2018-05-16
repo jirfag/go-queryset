@@ -143,29 +143,18 @@ type InFilterMethod struct {
 	qsCallGormMethod
 }
 
-// GetBody returns method's body
-func (m InFilterMethod) GetBody() string {
-	tmpl := `iArgs := []interface{}{%s}
-	for _, arg := range %s {
-		iArgs = append(iArgs, arg)
-	}
-	`
-	return fmt.Sprintf(tmpl, m.getArgName(0), m.getArgName(1)) + m.qsCallGormMethod.GetBody()
-}
-
 func newInFilterMethodImpl(ctx QsFieldContext, operationName, sql string) InFilterMethod {
 	ctx = ctx.WithOperationName(operationName)
 	argName := fieldNameToArgName(ctx.fieldName())
 	args := newNArgsMethod(
-		newOneArgMethod(argName, ctx.fieldTypeName()),
-		newOneArgMethod(argName+"Rest", "..."+ctx.fieldTypeName()),
+		newOneArgMethod(argName, "..."+ctx.fieldTypeName()),
 	)
 	return InFilterMethod{
 		onFieldMethod:         ctx.onFieldMethod(),
 		nArgsMethod:           args,
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
-		qsCallGormMethod: newQsCallGormMethod("Where", "\"%s %s (?)\", iArgs",
-			ctx.fieldDBName(), sql),
+		qsCallGormMethod: newQsCallGormMethod("Where", "\"%s %s (?)\", %s",
+			ctx.fieldDBName(), sql, argName),
 	}
 }
 

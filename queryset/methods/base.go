@@ -106,10 +106,6 @@ type nArgsMethod struct {
 	args []oneArgMethod
 }
 
-func (m nArgsMethod) getArgName(n int) string {
-	return m.args[n].getArgName()
-}
-
 // GetArgsDeclaration returns declaration of arguments list for func decl
 func (m nArgsMethod) GetArgsDeclaration() string {
 	decls := []string{}
