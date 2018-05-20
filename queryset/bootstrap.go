@@ -49,6 +49,7 @@ func writeQuerySetsToOutput(r io.Reader, pkgInfo *loader.PackageInfo, outFile st
 	package %s
 
 import (
+	"errors"
 	"fmt"
 	"time"
 

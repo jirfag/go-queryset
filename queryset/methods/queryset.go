@@ -143,6 +143,15 @@ type InFilterMethod struct {
 	qsCallGormMethod
 }
 
+func (m InFilterMethod) GetBody() string {
+	tmpl := `if len(%s) == 0 {
+	qs.db.AddError(errors.New("must at least pass one %s in %s"))
+	return qs.w(qs.db)
+	}
+	`
+	return fmt.Sprintf(tmpl, m.getArgName(0), m.getArgName(0), m.GetMethodName()) + m.qsCallGormMethod.GetBody()
+}
+
 func newInFilterMethodImpl(ctx QsFieldContext, operationName, sql string) InFilterMethod {
 	ctx = ctx.WithOperationName(operationName)
 	argName := fieldNameToArgName(ctx.fieldName())
