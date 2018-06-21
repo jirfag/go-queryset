@@ -107,7 +107,8 @@ func (b *methodsBuilder) buildStructSelectMethods() *methodsBuilder {
 	b.ret = append(b.ret,
 		methods.NewAllMethod(b.s.TypeName, b.qsTypeName()),
 		methods.NewOneMethod(b.s.TypeName, b.qsTypeName()),
-		methods.NewLimitMethod(b.qsTypeName()))
+		methods.NewLimitMethod(b.qsTypeName()),
+		methods.NewOffsetMethod(b.qsTypeName()))
 	return b
 }
 
