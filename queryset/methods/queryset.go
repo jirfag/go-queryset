@@ -317,6 +317,11 @@ func NewLimitMethod(qsTypeName string) StructOperationOneArgMethod {
 	return newStructOperationOneArgMethod("Limit", "int", qsTypeName)
 }
 
+// NewOffsetMethod creates Offset method
+func NewOffsetMethod(qsTypeName string) StructOperationOneArgMethod {
+	return newStructOperationOneArgMethod("Offset", "int", qsTypeName)
+}
+
 // NewAllMethod creates All method
 func NewAllMethod(structName, qsTypeName string) SelectMethod {
 	return newSelectMethod("All", "Find", fmt.Sprintf("*[]%s", structName), qsTypeName)

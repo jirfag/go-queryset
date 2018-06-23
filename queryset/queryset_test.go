@@ -107,6 +107,7 @@ type testQueryFunc func(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB)
 func TestQueries(t *testing.T) {
 	funcs := []testQueryFunc{
 		testUserSelectAll,
+		testUserSelectWithLimitAndOffset,
 		testUserSelectAllNoRecords,
 		testUserSelectOne,
 		testUserSelectWithSurnameFilter,
@@ -142,6 +143,17 @@ func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	var users []test.User
 	assert.Nil(t, test.NewUserQuerySet(db).All(&users))
 	assert.Equal(t, expUsers, users)
+}
+
+func testUserSelectWithLimitAndOffset(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(2)
+	req := "SELECT * FROM `users` WHERE `users`.deleted_at IS NULL LIMIT 1 OFFSET 1"
+	m.ExpectQuery(fixedFullRe(req)).
+		WillReturnRows(getRowsForUsers(expUsers))
+
+	var users []test.User
+	assert.Nil(t, test.NewUserQuerySet(db).Limit(1).Offset(1).All(&users))
+	assert.Equal(t, expUsers[0], users[0])
 }
 
 func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
