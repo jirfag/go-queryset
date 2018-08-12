@@ -122,6 +122,13 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info {
 		return &Info{
 			BaseInfo: bi,
 		}
+	case *types.Slice:
+		if t.Elem().String() == "byte" {
+			return &Info{
+				BaseInfo: bi,
+			}
+		}
+		return nil
 	case *types.Named:
 		r := g.GenFieldInfo(field{
 			name: f.Name(),
