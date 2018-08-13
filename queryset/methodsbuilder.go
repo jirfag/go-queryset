@@ -123,7 +123,8 @@ func (b *methodsBuilder) buildCRUDMethods() *methodsBuilder {
 		methods.NewGetUpdaterMethod(b.qsTypeName(), getUpdaterTypeName(b.s.TypeName)),
 		methods.NewDeleteMethod(b.qsTypeName(), b.s.TypeName),
 		methods.NewStructModifierMethod("Create", b.s.TypeName),
-		methods.NewStructModifierMethod("Delete", b.s.TypeName))
+		methods.NewStructModifierMethod("Delete", b.s.TypeName),
+		methods.NewGetDBMethod(b.qsTypeName()))
 	return b
 }
 
