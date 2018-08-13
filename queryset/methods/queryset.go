@@ -253,17 +253,46 @@ func NewGetUpdaterMethod(qsTypeName, updaterTypeMethod string) GetUpdaterMethod 
 // DeleteMethod creates Delete method
 type DeleteMethod struct {
 	baseQuerySetMethod
+
 	namedMethod
 	noArgsMethod
+
 	gormErroredMethod
 }
 
 // NewDeleteMethod creates Delete method
 func NewDeleteMethod(qsTypeName, structTypeName string) DeleteMethod {
 	return DeleteMethod{
-		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+
 		namedMethod:        newNamedMethod("Delete"),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
 		gormErroredMethod:  newGormErroredMethod("Delete", structTypeName+"{}", qsDbName),
+	}
+}
+
+// DeleteNumMethod creates Delete Num method
+type DeleteNumMethod struct {
+	namedMethod
+	baseQuerySetMethod
+
+	dbArgMethod
+	constBodyMethod
+	constRetMethod
+}
+
+// NewDeleteNumMethod delete row count
+func NewDeleteNumMethod(qsTypeName, structTypeName string) DeleteNumMethod {
+	return DeleteNumMethod{
+		namedMethod:        newNamedMethod("DeleteNum"),
+		dbArgMethod:        newDbArgMethod(),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		constRetMethod:     newConstRetMethod("(int64, error)"),
+		constBodyMethod: newConstBodyMethod(
+			strings.Join([]string{
+				"db = qs.db.Delete(" + structTypeName + "{}" + ")",
+				"return db.RowsAffected, db.Error",
+			}, "\n"),
+		),
 	}
 }
 
