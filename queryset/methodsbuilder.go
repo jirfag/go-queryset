@@ -124,7 +124,8 @@ func (b *methodsBuilder) buildCRUDMethods() *methodsBuilder {
 		methods.NewDeleteMethod(b.qsTypeName(), b.s.TypeName),
 		methods.NewStructModifierMethod("Create", b.s.TypeName),
 		methods.NewStructModifierMethod("Delete", b.s.TypeName),
-		methods.NewDeleteNumMethod(b.qsTypeName(), b.s.TypeName))
+		methods.NewDeleteNumMethod(b.qsTypeName(), b.s.TypeName),
+		methods.NewDeleteNumUnscopedMethod(b.qsTypeName(), b.s.TypeName))
 	return b
 }
 

@@ -270,26 +270,50 @@ func NewDeleteMethod(qsTypeName, structTypeName string) DeleteMethod {
 	}
 }
 
-// DeleteNumMethod creates Delete Num method
+// DeleteNumMethod creates DeleteNum method
 type DeleteNumMethod struct {
-	namedMethod
-	baseQuerySetMethod
+        namedMethod
+        baseQuerySetMethod
 
-	dbArgMethod
-	constBodyMethod
-	constRetMethod
+        noArgsMethod
+        constBodyMethod
+        constRetMethod
 }
 
 // NewDeleteNumMethod delete row count
 func NewDeleteNumMethod(qsTypeName, structTypeName string) DeleteNumMethod {
-	return DeleteNumMethod{
-		namedMethod:        newNamedMethod("DeleteNum"),
-		dbArgMethod:        newDbArgMethod(),
+        return DeleteNumMethod{
+                namedMethod:        newNamedMethod("DeleteNum"),
+                baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+                constRetMethod:     newConstRetMethod("(int64, error)"),
+                constBodyMethod: newConstBodyMethod(
+                        strings.Join([]string{
+                                "db := qs.db.Delete(" + structTypeName + "{}" + ")",
+                                "return db.RowsAffected, db.Error",
+                        }, "\n"),
+                ),
+        }
+}
+
+// DeleteNumUnscopedMethod creates DeleteNumUnscoped method for performing hard deletes
+type DeleteNumUnscopedMethod struct {
+	namedMethod
+	baseQuerySetMethod
+
+	noArgsMethod
+	constBodyMethod
+	constRetMethod
+}
+
+// NewDeleteNumUnscopedMethod delete row count for hard deletes
+func NewDeleteNumUnscopedMethod(qsTypeName, structTypeName string) DeleteNumUnscopedMethod {
+	return DeleteNumUnscopedMethod{
+		namedMethod:        newNamedMethod("DeleteNumUnscoped"),
 		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
 		constRetMethod:     newConstRetMethod("(int64, error)"),
 		constBodyMethod: newConstBodyMethod(
 			strings.Join([]string{
-				"db = qs.db.Delete(" + structTypeName + "{}" + ")",
+				"db := qs.db.Unscoped().Delete(" + structTypeName + "{}" + ")",
 				"return db.RowsAffected, db.Error",
 			}, "\n"),
 		),
