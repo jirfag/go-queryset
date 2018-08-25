@@ -253,17 +253,70 @@ func NewGetUpdaterMethod(qsTypeName, updaterTypeMethod string) GetUpdaterMethod 
 // DeleteMethod creates Delete method
 type DeleteMethod struct {
 	baseQuerySetMethod
+
 	namedMethod
 	noArgsMethod
+
 	gormErroredMethod
 }
 
 // NewDeleteMethod creates Delete method
 func NewDeleteMethod(qsTypeName, structTypeName string) DeleteMethod {
 	return DeleteMethod{
-		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+
 		namedMethod:        newNamedMethod("Delete"),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
 		gormErroredMethod:  newGormErroredMethod("Delete", structTypeName+"{}", qsDbName),
+	}
+}
+
+// DeleteNumMethod creates DeleteNum method
+type DeleteNumMethod struct {
+        namedMethod
+        baseQuerySetMethod
+
+        noArgsMethod
+        constBodyMethod
+        constRetMethod
+}
+
+// NewDeleteNumMethod delete row count
+func NewDeleteNumMethod(qsTypeName, structTypeName string) DeleteNumMethod {
+        return DeleteNumMethod{
+                namedMethod:        newNamedMethod("DeleteNum"),
+                baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+                constRetMethod:     newConstRetMethod("(int64, error)"),
+                constBodyMethod: newConstBodyMethod(
+                        strings.Join([]string{
+                                "db := qs.db.Delete(" + structTypeName + "{}" + ")",
+                                "return db.RowsAffected, db.Error",
+                        }, "\n"),
+                ),
+        }
+}
+
+// DeleteNumUnscopedMethod creates DeleteNumUnscoped method for performing hard deletes
+type DeleteNumUnscopedMethod struct {
+	namedMethod
+	baseQuerySetMethod
+
+	noArgsMethod
+	constBodyMethod
+	constRetMethod
+}
+
+// NewDeleteNumUnscopedMethod delete row count for hard deletes
+func NewDeleteNumUnscopedMethod(qsTypeName, structTypeName string) DeleteNumUnscopedMethod {
+	return DeleteNumUnscopedMethod{
+		namedMethod:        newNamedMethod("DeleteNumUnscoped"),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		constRetMethod:     newConstRetMethod("(int64, error)"),
+		constBodyMethod: newConstBodyMethod(
+			strings.Join([]string{
+				"db := qs.db.Unscoped().Delete(" + structTypeName + "{}" + ")",
+				"return db.RowsAffected, db.Error",
+			}, "\n"),
+		),
 	}
 }
 

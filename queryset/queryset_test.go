@@ -120,6 +120,8 @@ func TestQueries(t *testing.T) {
 		testUserQueryFilters,
 		testUsersCount,
 		testUsersUpdateNum,
+		testUsersDeleteNum,
+		testUsersDeleteNumUnscoped,
 	}
 	for _, f := range funcs {
 		f := f // save range var
@@ -326,6 +328,36 @@ func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	assert.Nil(t, u.Delete(db))
+}
+
+func testUsersDeleteNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	usersNum := 2
+	users := getTestUsers(usersNum)
+	req := "UPDATE `users` SET deleted_at=? WHERE `users`.deleted_at IS NULL AND ((email IN (?,?)))"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(sqlmock.AnyArg(), users[0].Email, users[1].Email).
+		WillReturnResult(sqlmock.NewResult(0, int64(usersNum)))
+
+	num, err := test.NewUserQuerySet(db).
+		EmailIn(users[0].Email, users[1].Email).
+		DeleteNum()
+	assert.Nil(t, err)
+	assert.Equal(t, int64(usersNum), num)
+}
+
+func testUsersDeleteNumUnscoped(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	usersNum := 2
+	users := getTestUsers(usersNum)
+	req := "DELETE FROM `users` WHERE (email IN (?,?))"
+	m.ExpectExec(fixedFullRe(req)).
+		WithArgs(users[0].Email, users[1].Email).
+		WillReturnResult(sqlmock.NewResult(0, int64(usersNum)))
+
+	num, err := test.NewUserQuerySet(db).
+		EmailIn(users[0].Email, users[1].Email).
+		DeleteNumUnscoped()
+	assert.Nil(t, err)
+	assert.Equal(t, int64(usersNum), num)
 }
 
 func testUsersUpdateNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
