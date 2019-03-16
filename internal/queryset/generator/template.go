@@ -1,4 +1,4 @@
-package queryset
+package generator
 
 import (
 	"text/template"

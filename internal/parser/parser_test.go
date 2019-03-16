@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,23 +30,7 @@ func getRepoRoot() string {
 }
 
 func getTempDirRoot() string {
-	return filepath.Join(getRepoRoot(), "test")
-}
-
-func TestFileNameToPkgName(t *testing.T) {
-	_, selfFilePath, _, ok := runtime.Caller(0)
-	assert.True(t, ok)
-	assert.NotEmpty(t, selfFilePath)
-	selfPkg := "github.com/jirfag/go-queryset/parser"
-	if !strings.Contains(selfFilePath, selfPkg) {
-		t.Skipf("it's a forked repo %q, skip pkg path test", selfFilePath)
-	}
-
-	assert.Equal(t, selfPkg, fileNameToPkgName("", selfFilePath))
-
-	const fileNotInGoPath = "models/models.go"
-	const absFileNotInGoPath = "/tmp/" + fileNotInGoPath
-	assert.Equal(t, "./models", fileNameToPkgName(fileNotInGoPath, absFileNotInGoPath))
+	return filepath.Join(getRepoRoot(), "parser", "test")
 }
 
 func getTempFileName(rootDir, prefix, suffix string) (*os.File, error) {
@@ -123,6 +107,7 @@ func TestGetStructNamesInFile(t *testing.T) {
 		},
 	}
 
+	p := Structs{}
 	for i, tc := range cases {
 		tc := tc // capture range variable
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
@@ -130,7 +115,7 @@ func TestGetStructNamesInFile(t *testing.T) {
 			f := getTmpFileForCode(tc.code)
 			defer removeTempFileAndDir(f)
 
-			res, err := getStructNamesInFile(f.Name())
+			res, err := p.getStructNamesInFile(f.Name())
 			if tc.errorIsExpected {
 				assert.NotNil(t, err)
 				return
@@ -267,24 +252,24 @@ func testStructFields(t *testing.T, tc structFieldsCase) {
 	f := getTmpFileForCode(tc.code)
 	defer removeTempFileAndDir(f)
 
-	pkg, structs, err := GetStructsInFile(f.Name())
+	p := Structs{}
+	ret, err := p.ParseFile(context.Background(), f.Name())
 	if tc.errorIsExpected {
 		assert.NotNil(t, err)
 		return
 	}
 
 	assert.Nil(t, err)
-	assert.NotNil(t, pkg)
-	assert.NotNil(t, structs)
+	assert.NotNil(t, ret)
 
-	assert.Len(t, structs, tc.getExpectedtructsCount())
+	assert.Len(t, ret.Structs, tc.getExpectedtructsCount())
 	if tc.getExpectedtructsCount() == 0 {
 		return
 	}
 
 	var typeName string
 
-	for structTypeName := range structs {
+	for structTypeName := range ret.Structs {
 		if structTypeName == "T" {
 			typeName = structTypeName
 			break
@@ -292,7 +277,7 @@ func testStructFields(t *testing.T, tc structFieldsCase) {
 	}
 	assert.NotNil(t, typeName)
 
-	s := structs[typeName]
+	s := ret.Structs[typeName]
 	fieldNames := []string{}
 	for _, field := range s.Fields {
 		assert.NotEmpty(t, field.Name)

@@ -1,18 +1,17 @@
-package queryset
+package generator
 
 import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/types"
 	"io"
 	"sort"
 	"strings"
 
-	"golang.org/x/tools/go/loader"
-
-	"github.com/jirfag/go-queryset/parser"
-	"github.com/jirfag/go-queryset/queryset/field"
-	"github.com/jirfag/go-queryset/queryset/methods"
+	"github.com/jirfag/go-queryset/internal/parser"
+	"github.com/jirfag/go-queryset/internal/queryset/field"
+	"github.com/jirfag/go-queryset/internal/queryset/methods"
 )
 
 type querySetStructConfig struct {
@@ -56,8 +55,8 @@ func doesNeedToGenerateQuerySet(doc *ast.CommentGroup) bool {
 	return false
 }
 
-func genStructFieldInfos(s parser.ParsedStruct, pkgInfo *loader.PackageInfo) (ret []field.Info) {
-	g := field.NewInfoGenerator(pkgInfo.Pkg)
+func genStructFieldInfos(s parser.ParsedStruct, types *types.Package) (ret []field.Info) {
+	g := field.NewInfoGenerator(types)
 	for _, f := range s.Fields {
 		fi := g.GenFieldInfo(f)
 		if fi == nil {
@@ -68,8 +67,8 @@ func genStructFieldInfos(s parser.ParsedStruct, pkgInfo *loader.PackageInfo) (re
 	return ret
 }
 
-func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
-	structs parser.ParsedStructs) querySetStructConfigSlice {
+func generateQuerySetConfigs(types *types.Package,
+	structs map[string]parser.ParsedStruct) querySetStructConfigSlice {
 
 	querySetStructConfigs := querySetStructConfigSlice{}
 
@@ -78,7 +77,7 @@ func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
 			continue
 		}
 
-		fields := genStructFieldInfos(s, pkgInfo)
+		fields := genStructFieldInfos(s, types)
 		b := newMethodsBuilder(s, fields)
 		methods := b.Build()
 
@@ -97,9 +96,8 @@ func generateQuerySetConfigs(pkgInfo *loader.PackageInfo,
 
 // GenerateQuerySetsForStructs is an internal method to retrieve querysets
 // generated code from parsed structs
-func GenerateQuerySetsForStructs(pkgInfo *loader.PackageInfo, structs parser.ParsedStructs) (io.Reader, error) {
-
-	querySetStructConfigs := generateQuerySetConfigs(pkgInfo, structs)
+func GenerateQuerySetsForStructs(types *types.Package, structs map[string]parser.ParsedStruct) (io.Reader, error) {
+	querySetStructConfigs := generateQuerySetConfigs(types, structs)
 	if len(querySetStructConfigs) == 0 {
 		return nil, nil
 	}

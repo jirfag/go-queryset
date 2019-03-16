@@ -1,6 +1,7 @@
-package queryset
+package generator
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
@@ -15,13 +16,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jirfag/go-queryset/internal/parser"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"github.com/jirfag/go-queryset/queryset/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/jirfag/go-queryset/internal/queryset/generator/test"
+	assert "github.com/stretchr/testify/require"
 
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+	sqlmock "gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
+
+const testSurname = "Ivanov"
 
 func fixedFullRe(s string) string {
 	return fmt.Sprintf("^%s$", regexp.QuoteMeta(s))
@@ -139,7 +144,7 @@ func TestQueries(t *testing.T) {
 
 func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(2)
-	m.ExpectQuery(fixedFullRe("SELECT * FROM `users` WHERE `users`.deleted_at IS NULL")).
+	m.ExpectQuery(fixedFullRe("SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL")).
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
@@ -149,7 +154,7 @@ func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserSelectWithLimitAndOffset(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(2)
-	req := "SELECT * FROM `users` WHERE `users`.deleted_at IS NULL LIMIT 1 OFFSET 1"
+	req := "SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL LIMIT 1 OFFSET 1"
 	m.ExpectQuery(fixedFullRe(req)).
 		WillReturnRows(getRowsForUsers(expUsers))
 
@@ -159,7 +164,7 @@ func testUserSelectWithLimitAndOffset(t *testing.T, m sqlmock.Sqlmock, db *gorm.
 }
 
 func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
-	m.ExpectQuery(fixedFullRe("SELECT * FROM `users` WHERE `users`.deleted_at IS NULL")).
+	m.ExpectQuery(fixedFullRe("SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL")).
 		WillReturnError(sql.ErrNoRows)
 
 	var users []test.User
@@ -169,7 +174,7 @@ func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(1)
-	req := "SELECT * FROM `users` WHERE `users`.deleted_at IS NULL ORDER BY `users`.`id` ASC LIMIT 1"
+	req := "SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL ORDER BY `users`.`id` ASC LIMIT 1"
 	m.ExpectQuery(fixedFullRe(req)).
 		WillReturnRows(getRowsForUsers(expUsers))
 
@@ -181,11 +186,11 @@ func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 func testUserSelectWithSurnameFilter(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(1)
 
-	surname := "Ivanov"
+	surname := testSurname
 	expUsers[0].Surname = &surname
 
 	req := "SELECT * FROM `users` " +
-		"WHERE `users`.deleted_at IS NULL AND ((user_surname = ?)) ORDER BY `users`.`id` ASC LIMIT 1"
+		"WHERE `users`.`deleted_at` IS NULL AND ((user_surname = ?)) ORDER BY `users`.`id` ASC LIMIT 1"
 	m.ExpectQuery(fixedFullRe(req)).
 		WillReturnRows(getRowsForUsers(expUsers))
 
@@ -242,7 +247,7 @@ func testUserQueryFilters(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func runUserQueryFilterSubTest(t *testing.T, c userQueryTestCase, m sqlmock.Sqlmock, db *gorm.DB) {
 	expUsers := getTestUsers(5)
-	req := "SELECT * FROM `users` WHERE `users`.deleted_at IS NULL AND " + c.q
+	req := "SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL AND " + c.q
 	m.ExpectQuery(fixedFullRe(req)).WithArgs(c.args...).
 		WillReturnRows(getRowsForUsers(expUsers))
 
@@ -270,7 +275,7 @@ func testUserCreateOneWithSurname(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) 
 	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`) " +
 		"VALUES (?,?,?,?,?,?)"
 
-	surname := "Ivanov"
+	surname := testSurname
 	u.Surname = &surname
 
 	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
@@ -284,7 +289,7 @@ func testUserCreateOneWithSurname(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) 
 
 func testUserUpdateByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((email = ?))"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.`deleted_at` IS NULL AND ((email = ?))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(u.Name, u.Email).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -299,7 +304,7 @@ func testUserUpdateByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserUpdateFieldsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND `users`.`id` = ?"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(u.Name, u.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -309,7 +314,7 @@ func testUserUpdateFieldsByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserDeleteByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET deleted_at=? WHERE `users`.deleted_at IS NULL AND ((email = ?))"
+	req := "UPDATE `users` SET `deleted_at`=? WHERE `users`.`deleted_at` IS NULL AND ((email = ?))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(sqlmock.AnyArg(), u.Email).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -322,7 +327,7 @@ func testUserDeleteByEmail(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUser()
-	req := "UPDATE `users` SET deleted_at=? WHERE `users`.deleted_at IS NULL AND `users`.`id` = ?"
+	req := "UPDATE `users` SET `deleted_at`=? WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = ?"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(sqlmock.AnyArg(), u.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -333,7 +338,7 @@ func testUserDeleteByPK(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 func testUsersDeleteNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	usersNum := 2
 	users := getTestUsers(usersNum)
-	req := "UPDATE `users` SET deleted_at=? WHERE `users`.deleted_at IS NULL AND ((email IN (?,?)))"
+	req := "UPDATE `users` SET `deleted_at`=? WHERE `users`.`deleted_at` IS NULL AND ((email IN (?,?)))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(sqlmock.AnyArg(), users[0].Email, users[1].Email).
 		WillReturnResult(sqlmock.NewResult(0, int64(usersNum)))
@@ -363,7 +368,7 @@ func testUsersDeleteNumUnscoped(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 func testUsersUpdateNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	usersNum := 2
 	users := getTestUsers(usersNum)
-	req := "UPDATE `users` SET `name` = ? WHERE `users`.deleted_at IS NULL AND ((email IN (?,?)))"
+	req := "UPDATE `users` SET `name` = ? WHERE `users`.`deleted_at` IS NULL AND ((email IN (?,?)))"
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(sqlmock.AnyArg(), users[0].Email, users[1].Email).
 		WillReturnResult(sqlmock.NewResult(0, int64(usersNum)))
@@ -379,7 +384,7 @@ func testUsersUpdateNum(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUsersCount(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	expCount := 5
-	req := "SELECT count(*) FROM `users` WHERE `users`.deleted_at IS NULL AND ((name != ?))"
+	req := "SELECT count(*) FROM `users` WHERE `users`.`deleted_at` IS NULL AND ((name != ?))"
 	m.ExpectQuery(fixedFullRe(req)).WithArgs(driver.Value("")).
 		WillReturnRows(getRowWithFields([]driver.Value{expCount}))
 
@@ -389,7 +394,10 @@ func testUsersCount(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 }
 
 func TestMain(m *testing.M) {
-	err := GenerateQuerySets("test/models.go", "test/autogenerated_models.go")
+	g := Generator{
+		StructsParser: &parser.Structs{},
+	}
+	err := g.Generate(context.Background(), "test/models.go", "test/autogenerated_models.go")
 	if err != nil {
 		panic(err)
 	}
@@ -398,8 +406,12 @@ func TestMain(m *testing.M) {
 }
 
 func BenchmarkHello(b *testing.B) {
+	g := Generator{
+		StructsParser: &parser.Structs{},
+	}
+
 	for i := 0; i < b.N; i++ {
-		err := GenerateQuerySets("test/models.go", "test/autogenerated_models.go")
+		err := g.Generate(context.Background(), "test/models.go", "test/autogenerated_models.go")
 		if err != nil {
 			b.Fatalf("can't generate querysets: %s", err)
 		}

@@ -1,0 +1,37 @@
+run:
+  skip-dirs:
+    - ^internal/parser/test/tmptestdir.*
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 15
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  lll:
+    line-length: 140
+
+linters:
+  enable-all: true
+  disable:
+    - scopelint
+    - gochecknoglobals
+    - gosec
+
+issues:
+  exclude-rules:
+    - linters:
+        - unparam
+      text: always receives
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+
+# golangci.com configuration
+# https://github.com/golangci/golangci/wiki/Configuration
+# service:
+#   golangci-lint-version: 1.14.0 # use fixed version to not introduce new linters unexpectedly
