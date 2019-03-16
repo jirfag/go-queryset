@@ -272,27 +272,27 @@ func NewDeleteMethod(qsTypeName, structTypeName string) DeleteMethod {
 
 // DeleteNumMethod creates DeleteNum method
 type DeleteNumMethod struct {
-        namedMethod
-        baseQuerySetMethod
+	namedMethod
+	baseQuerySetMethod
 
-        noArgsMethod
-        constBodyMethod
-        constRetMethod
+	noArgsMethod
+	constBodyMethod
+	constRetMethod
 }
 
 // NewDeleteNumMethod delete row count
 func NewDeleteNumMethod(qsTypeName, structTypeName string) DeleteNumMethod {
-        return DeleteNumMethod{
-                namedMethod:        newNamedMethod("DeleteNum"),
-                baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
-                constRetMethod:     newConstRetMethod("(int64, error)"),
-                constBodyMethod: newConstBodyMethod(
-                        strings.Join([]string{
-                                "db := qs.db.Delete(" + structTypeName + "{}" + ")",
-                                "return db.RowsAffected, db.Error",
-                        }, "\n"),
-                ),
-        }
+	return DeleteNumMethod{
+		namedMethod:        newNamedMethod("DeleteNum"),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		constRetMethod:     newConstRetMethod("(int64, error)"),
+		constBodyMethod: newConstBodyMethod(
+			strings.Join([]string{
+				"db := qs.db.Delete(" + structTypeName + "{}" + ")",
+				"return db.RowsAffected, db.Error",
+			}, "\n"),
+		),
+	}
 }
 
 // DeleteNumUnscopedMethod creates DeleteNumUnscoped method for performing hard deletes

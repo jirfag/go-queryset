@@ -2,10 +2,10 @@ package test
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/jirfag/go-queryset/queryset/tmp"
+	"github.com/jirfag/go-queryset/internal/queryset/generator/tmp"
 )
 
-//go:generate go run ../../cmd/goqueryset/goqueryset.go -in models.go
+//go:generate go run ../../../../cmd/goqueryset/goqueryset.go -in models.go
 
 // User is a usual user
 // gen:qs
