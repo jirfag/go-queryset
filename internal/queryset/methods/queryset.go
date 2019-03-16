@@ -27,6 +27,23 @@ func newRetQuerySetMethod(qsTypeName string) retQuerySetMethod {
 	}
 }
 
+type GetDBMethod struct {
+	namedMethod
+	baseQuerySetMethod
+	constRetMethod
+	noArgsMethod
+	constBodyMethod
+}
+
+func NewGetDBMethod(qsTypeName string) GetDBMethod {
+	return GetDBMethod{
+		namedMethod:        newNamedMethod("GetDB"),
+		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
+		constRetMethod:     newConstRetMethod("*gorm.DB"),
+		constBodyMethod:    newConstBodyMethod("return qs.db"),
+	}
+}
+
 // baseQuerySetMethod
 
 type baseQuerySetMethod struct {

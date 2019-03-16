@@ -25,6 +25,13 @@ type methodsSlice []methods.Method
 
 func (s methodsSlice) Len() int { return len(s) }
 func (s methodsSlice) Less(i, j int) bool {
+	// first, group by receiver
+	receiverCmp := strings.Compare(s[i].GetReceiverDeclaration(), s[j].GetReceiverDeclaration())
+	if receiverCmp != 0 {
+		return receiverCmp < 0
+	}
+
+	// second, sort by method name inside a receiver group
 	return strings.Compare(s[i].GetMethodName(), s[j].GetMethodName()) < 0
 }
 func (s methodsSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -87,7 +94,7 @@ func generateQuerySetConfigs(types *types.Package,
 			Methods:    methods,
 			Fields:     fields,
 		}
-		sort.Sort(qsConfig.Methods)
+		sort.Sort(qsConfig.Methods) // make output queryset stable
 		querySetStructConfigs = append(querySetStructConfigs, qsConfig)
 	}
 
