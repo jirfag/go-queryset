@@ -46,9 +46,6 @@ type ParsedStruct struct {
 func fileNameToPkgName(filePath, absFilePath string) string {
 	dir := filepath.Dir(absFilePath)
 	gopathEnv := os.Getenv("GOPATH")
-	if gopathEnv == "" {
-		gopathEnv = defaultGOPATH
-	}
 	gopaths := strings.Split(gopathEnv, string(os.PathListSeparator))
 	var inGoPath string
 	for _, gopath := range gopaths {
