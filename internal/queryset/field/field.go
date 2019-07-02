@@ -16,6 +16,7 @@ type BaseInfo struct {
 	IsStruct  bool
 	IsNumeric bool
 	IsTime    bool
+	IsString  bool
 }
 
 type Info struct {
@@ -118,6 +119,7 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info {
 
 	switch t := f.Type().(type) {
 	case *types.Basic:
+		bi.IsString = t.Info()&types.IsString != 0
 		bi.IsNumeric = t.Info()&types.IsNumeric != 0
 		return &Info{
 			BaseInfo: bi,

@@ -31,10 +31,17 @@ func (b *methodsBuilder) getQuerySetMethodsForField(f field.Info) []methods.Meth
 		methods.NewBinaryFilterMethod(fctx.WithOperationName("eq")),
 		methods.NewBinaryFilterMethod(fctx.WithOperationName("ne")),
 	}
+
 	if !f.IsTime {
 		inMethod := methods.NewInFilterMethod(fctx)
 		notInMethod := methods.NewNotInFilterMethod(fctx)
 		basicTypeMethods = append(basicTypeMethods, inMethod, notInMethod)
+	}
+
+	if f.IsString {
+		likeMethod := methods.NewBinaryFilterMethod(fctx.WithOperationName("like"))
+		notLikeMethod := methods.NewBinaryFilterMethod(fctx.WithOperationName("notlike"))
+		return append(basicTypeMethods, likeMethod, notLikeMethod)
 	}
 
 	numericMethods := []methods.Method{
