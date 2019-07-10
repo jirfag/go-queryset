@@ -266,14 +266,19 @@ func NewUserQuerySet(db *gorm.DB) UserQuerySet
 		func (qs UserQuerySet) NameIn(name string, nameRest ...string) UserQuerySet {}
 		func (qs UserQuerySet) NameNotIn(name string, nameRest ...string) UserQuerySet {}
 		```
+		* `Order(Asc|Desc)By{FieldName}()`
+		```go
+		func (qs UserQuerySet) OrderDescByRating() UserQuerySet
+		```
 	* numeric types (`int`, `int64`, `uint` etc + `time.Time`):
  		* `{FieldName}(Lt|Lte|Gt|Gte)(arg {FieldType)`
 		```go
 		func (qs UserQuerySet) RatingGt(rating int) UserQuerySet
 		```
-		* `Order(Asc|Desc)By{FieldName}()`
+	* string types (`string`):
+ 		* `{FieldName}(Like/Notlike)(arg {FieldType)`
 		```go
-		func (qs UserQuerySet) OrderDescByRating() UserQuerySet
+		func (qs UserQuerySet) NameLike(name string) UserQuerySet
 		```
 	* pointer fields: `{FieldName}IsNull()`, `{FieldName}IsNotNull()`
 	```go
