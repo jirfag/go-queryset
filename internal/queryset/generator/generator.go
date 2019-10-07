@@ -16,17 +16,18 @@ import (
 
 type Generator struct {
 	StructsParser *parser.Structs
+	quote         string
 }
 
 // Generate generates output file with querysets
-func (g Generator) Generate(ctx context.Context, inFilePath, outFilePath string) error {
+func (g Generator) Generate(ctx context.Context, inFilePath, outFilePath, quote string) error {
 	parsedFile, err := g.StructsParser.ParseFile(ctx, inFilePath)
 	if err != nil {
 		return errors.Wrapf(err, "can't parse file %s to get structs", inFilePath)
 	}
 
 	var r io.Reader
-	r, err = GenerateQuerySetsForStructs(parsedFile.Types, parsedFile.Structs)
+	r, err = GenerateQuerySetsForStructs(parsedFile.Types, quote, parsedFile.Structs)
 	if err != nil {
 		return errors.Wrap(err, "can't generate query sets")
 	}

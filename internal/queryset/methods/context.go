@@ -6,12 +6,14 @@ import (
 )
 
 type QsStructContext struct {
-	s parser.ParsedStruct
+	s     parser.ParsedStruct
+	quote string
 }
 
-func NewQsStructContext(s parser.ParsedStruct) QsStructContext {
+func NewQsStructContext(s parser.ParsedStruct, quote string) QsStructContext {
 	return QsStructContext{
-		s: s,
+		s:     s,
+		quote: quote,
 	}
 }
 
@@ -39,7 +41,7 @@ func (ctx QsFieldContext) fieldName() string {
 }
 
 func (ctx QsFieldContext) fieldDBName() string {
-	return ctx.f.DBName
+	return ctx.quote + ctx.f.DBName + ctx.quote
 }
 
 func (ctx QsFieldContext) fieldTypeName() string {
