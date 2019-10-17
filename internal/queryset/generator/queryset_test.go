@@ -112,6 +112,8 @@ type testQueryFunc func(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB)
 func TestQueries(t *testing.T) {
 	funcs := []testQueryFunc{
 		testUserSelectAll,
+		testUserSelectAllSingleField,
+		testUserSelectAllMultipleFields,
 		testUserSelectWithLimitAndOffset,
 		testUserSelectAllNoRecords,
 		testUserSelectOne,
@@ -149,6 +151,26 @@ func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 	var users []test.User
 	assert.Nil(t, test.NewUserQuerySet(db).All(&users))
+	assert.Equal(t, expUsers, users)
+}
+
+func testUserSelectAllSingleField(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(2)
+	m.ExpectQuery(fixedFullRe("SELECT name FROM `users` WHERE `users`.`deleted_at` IS NULL")).
+		WillReturnRows(getRowsForUsers(expUsers))
+
+	var users []test.User
+	assert.Nil(t, test.NewUserQuerySet(db).Select(test.UserDBSchema.Name).All(&users))
+	assert.Equal(t, expUsers, users)
+}
+
+func testUserSelectAllMultipleFields(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
+	expUsers := getTestUsers(2)
+	m.ExpectQuery(fixedFullRe("SELECT name,email FROM `users` WHERE `users`.`deleted_at` IS NULL")).
+		WillReturnRows(getRowsForUsers(expUsers))
+
+	var users []test.User
+	assert.Nil(t, test.NewUserQuerySet(db).Select(test.UserDBSchema.Name, test.UserDBSchema.Email).All(&users))
 	assert.Equal(t, expUsers, users)
 }
 

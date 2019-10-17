@@ -13,6 +13,7 @@ const qsCode = `
 // ===== BEGIN of all query sets
 
 {{ range .Configs }}
+  {{ $ft := printf "%s%s" .StructName "DBSchemaField" }}
   // ===== BEGIN of query set {{ .Name }}
 
 	// {{ .Name }} is an queryset type for {{ .StructName }}
@@ -31,6 +32,15 @@ const qsCode = `
 	  return New{{ .Name }}(db)
   }
 
+	func (qs {{ .Name }}) Select(fields ...{{ $ft }}) {{ .Name }} {
+	names := []string{}
+	for _, f := range fields {
+		names = append(names, f.String())
+	}
+
+	return qs.w(qs.db.Select(strings.Join(names, ",")))
+}
+
 	{{ range .Methods }}
 		{{ .GetDoc .GetMethodName }}
 		func ({{ .GetReceiverDeclaration }}) {{ .GetMethodName }}({{ .GetArgsDeclaration }})
@@ -43,7 +53,6 @@ const qsCode = `
 
 	// ===== BEGIN of {{ .StructName }} modifiers
 
-	{{ $ft := printf "%s%s" .StructName "DBSchemaField" }}
 	// {{ $ft }} describes database schema field. It requires for method 'Update'
 	type {{ $ft }} string
 
