@@ -50,6 +50,7 @@ func newDB() (sqlmock.Sqlmock, *gorm.DB) {
 func getRowsForUsers(users []test.User) *sqlmock.Rows {
 	var userFieldNames = []string{"id", "name", "user_surname", "email", "created_at", "updated_at", "deleted_at"}
 	rows := sqlmock.NewRows(userFieldNames)
+
 	for _, u := range users {
 		rows = rows.AddRow(u.ID, u.Name, u.Surname, u.Email, u.CreatedAt, u.UpdatedAt, u.DeletedAt)
 	}
@@ -67,6 +68,7 @@ func getRowWithFields(fields []driver.Value) *sqlmock.Rows {
 
 func getTestUsers(n int) []test.User {
 	ret := []test.User{}
+
 	for i := 0; i < n; i++ {
 		u := test.User{
 			Model: gorm.Model{
@@ -150,6 +152,7 @@ func testUserSelectAll(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
+
 	assert.Nil(t, test.NewUserQuerySet(db).All(&users))
 	assert.Equal(t, expUsers, users)
 }
@@ -160,6 +163,7 @@ func testUserSelectAllSingleField(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) 
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
+
 	assert.Nil(t, test.NewUserQuerySet(db).Select(test.UserDBSchema.Name).All(&users))
 	assert.Equal(t, expUsers, users)
 }
@@ -170,6 +174,7 @@ func testUserSelectAllMultipleFields(t *testing.T, m sqlmock.Sqlmock, db *gorm.D
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
+
 	assert.Nil(t, test.NewUserQuerySet(db).Select(test.UserDBSchema.Name, test.UserDBSchema.Email).All(&users))
 	assert.Equal(t, expUsers, users)
 }
@@ -181,6 +186,7 @@ func testUserSelectWithLimitAndOffset(t *testing.T, m sqlmock.Sqlmock, db *gorm.
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
+
 	assert.Nil(t, test.NewUserQuerySet(db).Limit(1).Offset(1).All(&users))
 	assert.Equal(t, expUsers[0], users[0])
 }
@@ -190,6 +196,7 @@ func testUserSelectAllNoRecords(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnError(sql.ErrNoRows)
 
 	var users []test.User
+
 	assert.Error(t, gorm.ErrRecordNotFound, test.NewUserQuerySet(db).All(&users))
 	assert.Len(t, users, 0)
 }
@@ -201,6 +208,7 @@ func testUserSelectOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var user test.User
+
 	assert.Nil(t, test.NewUserQuerySet(db).One(&user))
 	assert.Equal(t, expUsers[0], user)
 }
@@ -217,6 +225,7 @@ func testUserSelectWithSurnameFilter(t *testing.T, m sqlmock.Sqlmock, db *gorm.D
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var user test.User
+
 	assert.Nil(t, test.NewUserQuerySet(db).SurnameEq(surname).One(&user))
 	assert.Equal(t, expUsers[0], user)
 }
@@ -274,6 +283,7 @@ func runUserQueryFilterSubTest(t *testing.T, c userQueryTestCase, m sqlmock.Sqlm
 		WillReturnRows(getRowsForUsers(expUsers))
 
 	var users []test.User
+
 	assert.Nil(t, c.qs(test.NewUserQuerySet(db)).All(&users))
 	assert.Equal(t, expUsers, users)
 }
