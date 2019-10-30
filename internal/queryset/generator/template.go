@@ -28,18 +28,18 @@ const qsCode = `
 	  }
   }
 
-	func (qs {{ .Name }}) w(db *gorm.DB) {{ .Name }} {
+  func (qs {{ .Name }}) w(db *gorm.DB) {{ .Name }} {
 	  return New{{ .Name }}(db)
   }
 
-	func (qs {{ .Name }}) Select(fields ...{{ $ft }}) {{ .Name }} {
-	names := []string{}
-	for _, f := range fields {
-		names = append(names, f.String())
-	}
+  func (qs {{ .Name }}) Select(fields ...{{ $ft }}) {{ .Name }} {
+	  names := []string{}
+	  for _, f := range fields {
+		  names = append(names, f.String())
+	  }
 
-	return qs.w(qs.db.Select(strings.Join(names, ",")))
-}
+	  return qs.w(qs.db.Select(strings.Join(names, ",")))
+  }
 
 	{{ range .Methods }}
 		{{ .GetDoc .GetMethodName }}
