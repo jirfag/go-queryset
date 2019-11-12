@@ -56,6 +56,7 @@ func (g Generator) writeQuerySetsToOutput(r io.Reader, packageName, outFile stri
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
