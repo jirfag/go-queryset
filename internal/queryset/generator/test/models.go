@@ -12,7 +12,7 @@ import (
 type User struct {
 	gorm.Model
 
-	//Posts []Post
+	Posts    []Post
 	Name     string
 	Surname  *string `gorm:"column:user_surname"`
 	Email    string

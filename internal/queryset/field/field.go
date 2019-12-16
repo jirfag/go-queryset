@@ -23,6 +23,7 @@ type Info struct {
 	pointed *BaseInfo
 	BaseInfo
 	IsPointer bool
+	IsSlice   bool
 }
 
 func (fi Info) GetPointed() Info {
@@ -131,6 +132,12 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info {
 				return &Info{
 					BaseInfo: bi,
 				}
+			}
+		case *types.Struct:
+			bi.IsStruct = true
+			return &Info{
+				BaseInfo: bi,
+				IsSlice:  true,
 			}
 		}
 		return nil
