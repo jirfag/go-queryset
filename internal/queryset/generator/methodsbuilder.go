@@ -94,6 +94,10 @@ func (b *methodsBuilder) buildUpdaterStructMethods() {
 }
 
 func (b *methodsBuilder) buildUpdaterFieldMethods(f field.Info) {
+	if f.IsSlice {
+		return
+	}
+
 	if f.IsPointer {
 		p := f.GetPointed()
 		if p.IsStruct {
