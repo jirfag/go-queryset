@@ -28,6 +28,8 @@ import (
 
 const testSurname = "Ivanov"
 
+var testPassword = "Password"
+
 func fixedFullRe(s string) string {
 	return fmt.Sprintf("^%s$", regexp.QuoteMeta(s))
 }
@@ -290,11 +292,14 @@ func runUserQueryFilterSubTest(t *testing.T, c userQueryTestCase, m sqlmock.Sqlm
 
 func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUserNoID()
-	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`) " +
-		"VALUES (?,?,?,?,?,?)"
+	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`,`password`) " +
+		"VALUES (?,?,?,?,?,?,?)"
+
+	password := []byte(testPassword)
+	u.Password = password
 
 	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-		u.Name, nil, u.Email}
+		u.Name, nil, u.Email, password}
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(args...).
 		WillReturnResult(sqlmock.NewResult(2, 1))
@@ -304,14 +309,16 @@ func testUserCreateOne(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 
 func testUserCreateOneWithSurname(t *testing.T, m sqlmock.Sqlmock, db *gorm.DB) {
 	u := getUserNoID()
-	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`) " +
-		"VALUES (?,?,?,?,?,?)"
+	req := "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`user_surname`,`email`,`password`) " +
+		"VALUES (?,?,?,?,?,?,?)"
 
 	surname := testSurname
+	password := []byte(testPassword)
 	u.Surname = &surname
+	u.Password = password
 
 	args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-		u.Name, &surname, u.Email}
+		u.Name, &surname, u.Email, password}
 	m.ExpectExec(fixedFullRe(req)).
 		WithArgs(args...).
 		WillReturnResult(sqlmock.NewResult(2, 1))
