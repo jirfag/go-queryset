@@ -125,9 +125,12 @@ func (g InfoGenerator) GenFieldInfo(f Field) *Info {
 			BaseInfo: bi,
 		}
 	case *types.Slice:
-		if t.Elem().String() == "byte" {
-			return &Info{
-				BaseInfo: bi,
+		switch u := t.Elem().Underlying().(type) {
+		case *types.Basic:
+			if u.Kind() == types.Byte {
+				return &Info{
+					BaseInfo: bi,
+				}
 			}
 		}
 		return nil
