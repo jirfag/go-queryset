@@ -51,6 +51,7 @@ func (g Generator) Generate(ctx context.Context, inFilePath, outFilePath string)
 
 func (g Generator) writeQuerySetsToOutput(r io.Reader, packageName, outFile string) error {
 	const hdrTmpl = `%s
+
 	package %s
 
 import (
