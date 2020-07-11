@@ -13,6 +13,7 @@ const qsCode = `
 // ===== BEGIN of all query sets
 
 {{ range .Configs }}
+  {{ $ft := printf "%s%s" .StructName "DBSchemaField" }}
   // ===== BEGIN of query set {{ .Name }}
 
 	// {{ .Name }} is an queryset type for {{ .StructName }}
@@ -27,8 +28,17 @@ const qsCode = `
 	  }
   }
 
-	func (qs {{ .Name }}) w(db *gorm.DB) {{ .Name }} {
+  func (qs {{ .Name }}) w(db *gorm.DB) {{ .Name }} {
 	  return New{{ .Name }}(db)
+  }
+
+  func (qs {{ .Name }}) Select(fields ...{{ $ft }}) {{ .Name }} {
+	  names := []string{}
+	  for _, f := range fields {
+		  names = append(names, f.String())
+	  }
+
+	  return qs.w(qs.db.Select(strings.Join(names, ",")))
   }
 
 	{{ range .Methods }}
@@ -43,7 +53,6 @@ const qsCode = `
 
 	// ===== BEGIN of {{ .StructName }} modifiers
 
-	{{ $ft := printf "%s%s" .StructName "DBSchemaField" }}
 	// {{ $ft }} describes database schema field. It requires for method 'Update'
 	type {{ $ft }} string
 

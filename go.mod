@@ -17,3 +17,5 @@ require (
 	golang.org/x/tools v0.0.0-20190226205152-f727befe758c
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.2.0
 )
+
+go 1.13

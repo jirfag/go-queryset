@@ -180,6 +180,23 @@ err := NewUserQuerySet(getGormDB()).
 	All(&users)
 ```
 
+### Select specific fields
+By default all fields are fetched using the `*` field selector.
+using the `select` methd it is possible to limit the SQL statement to fetch specific fields:
+```go
+var users []User
+err := NewUserQuerySet(getGormDB()).Select(UserDBSchema.ID, UserDBSchema.Rating).All(&users)
+if err == gorm.ErrRecordNotFound {
+	// no records were found
+}
+```
+
+It generates this SQL request for MySQL:
+```sql
+SELECT id, rating FROM `users` WHERE `users`.deleted_at IS NULL
+```
+
+
 ## Update
 
 ### Update one record by primary key
