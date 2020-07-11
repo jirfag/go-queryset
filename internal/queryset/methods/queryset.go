@@ -77,16 +77,11 @@ type FieldOperationNoArgsMethod struct {
 	chainedQuerySetMethod
 }
 
-func newFieldOperationNoArgsMethod(ctx QsFieldContext, transformFieldName bool) FieldOperationNoArgsMethod {
-
-	gormArgName := ctx.fieldName()
-	if transformFieldName {
-		gormArgName = ctx.fieldDBName()
-	}
+func newFieldOperationNoArgsMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
 
 	r := FieldOperationNoArgsMethod{
 		onFieldMethod:         ctx.onFieldMethod(),
-		qsCallGormMethod:      newQsCallGormMethod(ctx.operationName, `"%s"`, gormArgName),
+		qsCallGormMethod:      newQsCallGormMethod(ctx.operationName, newDBQuote(ctx.fieldDBName())),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
 	}
 	r.setFieldNameFirst(false) // UserPreload -> PreloadUser
@@ -119,16 +114,16 @@ func newStructOperationOneArgMethod(name, argTypeName, qsTypeName string) Struct
 }
 
 type qsCallGormMethod struct {
-	callGormMethod
+	methodCall
 }
 
 func (m qsCallGormMethod) GetBody() string {
-	return wrapToGormScope(m.callGormMethod.GetBody())
+	return wrapToGormScope(m.methodCall.GetBody())
 }
 
-func newQsCallGormMethod(name, argsFmt string, argsArgs ...interface{}) qsCallGormMethod {
+func newQsCallGormMethod(name string, args ...interface{}) qsCallGormMethod {
 	return qsCallGormMethod{
-		callGormMethod: newCallGormMethod(name, fmt.Sprintf(argsFmt, argsArgs...), qsDbName),
+		methodCall: newMethodCall(qsDbName, name, args...),
 	}
 }
 
@@ -147,8 +142,10 @@ func NewBinaryFilterMethod(ctx QsFieldContext) BinaryFilterMethod {
 		onFieldMethod:         ctx.onFieldMethod(),
 		oneArgMethod:          newOneArgMethod(argName, ctx.fieldTypeName()),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
-		qsCallGormMethod: newQsCallGormMethod("Where", "\"%s %s\", %s",
-			ctx.fieldDBName(), getWhereCondition(ctx.operationName), argName),
+		qsCallGormMethod: newQsCallGormMethod("Where",
+			newMethodCall("fmt", "Sprintf", "\"%s %s\"",
+				newDBQuote(ctx.fieldDBName()), `"`+getWhereCondition(ctx.operationName)+`"`),
+			argName),
 	}
 }
 
@@ -179,8 +176,10 @@ func newInFilterMethodImpl(ctx QsFieldContext, operationName, sql string) InFilt
 		onFieldMethod:         ctx.onFieldMethod(),
 		nArgsMethod:           args,
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
-		qsCallGormMethod: newQsCallGormMethod("Where", "\"%s %s (?)\", %s",
-			ctx.fieldDBName(), sql, argName),
+		qsCallGormMethod: newQsCallGormMethod("Where",
+			newMethodCall("fmt", "Sprintf", "\"%s %s (?)\"",
+				newDBQuote(ctx.fieldDBName()), `"`+sql+`"`),
+			argName),
 	}
 }
 
@@ -224,8 +223,9 @@ type UnaryFilterMethod struct {
 func newUnaryFilterMethod(ctx QsFieldContext, op string) UnaryFilterMethod {
 	r := UnaryFilterMethod{
 		onFieldMethod: ctx.onFieldMethod(),
-		qsCallGormMethod: newQsCallGormMethod("Where", `"%s %s"`,
-			ctx.fieldDBName(), op),
+		qsCallGormMethod: newQsCallGormMethod("Where",
+			newMethodCall("fmt", "Sprintf", `"%s %s"`,
+				newDBQuote(ctx.fieldDBName()), `"`+op+`"`)),
 		chainedQuerySetMethod: ctx.chainedQuerySetMethod(),
 	}
 	return r
@@ -364,23 +364,23 @@ func NewCountMethod(qsTypeName string) CountMethod {
 
 // NewPreloadMethod creates new Preload method
 func NewPreloadMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("Preload"), false)
+	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("Preload"))
 	return r
 }
 
 // NewOrderAscByMethod creates new OrderBy method ascending
 func NewOrderAscByMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("OrderAscBy"), true)
-	r.setGormMethodName("Order")
-	r.setGormMethodArgs(fmt.Sprintf(`"%s ASC"`, ctx.fieldDBName()))
+	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("OrderAscBy"))
+	r.setMethodName("Order")
+	r.setMethodArgs(newMethodCall("fmt", "Sprintf", `"%s ASC"`, newDBQuote(ctx.fieldDBName())))
 	return r
 }
 
 // NewOrderDescByMethod creates new OrderBy method descending
 func NewOrderDescByMethod(ctx QsFieldContext) FieldOperationNoArgsMethod {
-	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("OrderDescBy"), true)
-	r.setGormMethodName("Order")
-	r.setGormMethodArgs(fmt.Sprintf(`"%s DESC"`, ctx.fieldDBName()))
+	r := newFieldOperationNoArgsMethod(ctx.WithOperationName("OrderDescBy"))
+	r.setMethodName("Order")
+	r.setMethodArgs(newMethodCall("fmt", "Sprintf", `"%s DESC"`, newDBQuote(ctx.fieldDBName())))
 	return r
 }
 

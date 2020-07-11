@@ -74,8 +74,10 @@ func genStructFieldInfos(s parser.ParsedStruct, types *types.Package) (ret []fie
 	return ret
 }
 
-func generateQuerySetConfigs(types *types.Package,
-	structs map[string]parser.ParsedStruct) querySetStructConfigSlice {
+func generateQuerySetConfigs(
+	types *types.Package,
+	structs map[string]parser.ParsedStruct,
+) querySetStructConfigSlice {
 
 	querySetStructConfigs := querySetStructConfigSlice{}
 
@@ -103,7 +105,10 @@ func generateQuerySetConfigs(types *types.Package,
 
 // GenerateQuerySetsForStructs is an internal method to retrieve querysets
 // generated code from parsed structs
-func GenerateQuerySetsForStructs(types *types.Package, structs map[string]parser.ParsedStruct) (io.Reader, error) {
+func GenerateQuerySetsForStructs(
+	types *types.Package,
+	structs map[string]parser.ParsedStruct,
+) (io.Reader, error) {
 	querySetStructConfigs := generateQuerySetConfigs(types, structs)
 	if len(querySetStructConfigs) == 0 {
 		return nil, nil
