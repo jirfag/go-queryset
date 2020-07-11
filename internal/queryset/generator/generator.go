@@ -16,7 +16,6 @@ import (
 
 type Generator struct {
 	StructsParser *parser.Structs
-	quote         string
 }
 
 // Generate generates output file with querysets

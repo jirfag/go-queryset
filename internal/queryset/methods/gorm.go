@@ -25,10 +25,6 @@ func (m methodCall) getMethodName() string {
 	return m.methodName
 }
 
-func (m methodCall) getMethodArgs() []interface{} {
-	return m.methodArgs
-}
-
 func (m *methodCall) setMethodArgs(args ...interface{}) {
 	m.methodArgs = args
 }
