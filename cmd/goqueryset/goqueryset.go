@@ -17,7 +17,6 @@ func main() {
 	inFile := flag.String("in", "models.go", "path to input file")
 	outFile := flag.String("out", defaultOutPath, "path to output file")
 	timeout := flag.Duration("timeout", time.Minute, "timeout for generation")
-	quoteIdentifier := flag.String("quote", "", "the quote to be used to escape column names")
 	flag.Parse()
 
 	if *outFile == defaultOutPath {
@@ -31,7 +30,7 @@ func main() {
 	ctx, finish := context.WithTimeout(context.Background(), *timeout)
 	defer finish()
 
-	if err := g.Generate(ctx, *inFile, *outFile, *quoteIdentifier); err != nil {
+	if err := g.Generate(ctx, *inFile, *outFile); err != nil {
 		log.Fatalf("can't generate query sets: %s", err)
 	}
 }

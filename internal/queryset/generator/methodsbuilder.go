@@ -17,10 +17,10 @@ func (b *methodsBuilder) qsTypeName() string {
 	return b.s.TypeName + "QuerySet"
 }
 
-func newMethodsBuilder(s parser.ParsedStruct, quote string, fields []field.Info) *methodsBuilder {
+func newMethodsBuilder(s parser.ParsedStruct, fields []field.Info) *methodsBuilder {
 	return &methodsBuilder{
 		s:      s,
-		sctx:   methods.NewQsStructContext(s, quote),
+		sctx:   methods.NewQsStructContext(s),
 		fields: fields,
 	}
 }
