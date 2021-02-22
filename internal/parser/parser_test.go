@@ -215,7 +215,7 @@ func TestGetStructsInFile(t *testing.T) {
 		},
 		{ // test another package imported embedding
 			code: `package p
-				import "github.com/jinzhu/gorm"
+				import "gorm.io/gorm"
 				type T struct {
 					gorm.Model
 					F int
