@@ -102,8 +102,8 @@ You can embed and not embed `gorm.Model` into your model (e.g. if you don't need
 to properly work. Don't worry if you don't use GORM yet, it's [easy to create `*gorm.DB`](http://jinzhu.me/gorm/database.html#connecting-to-a-database):
 ```go
 import (
-    "github.com/jinzhu/gorm"
-    _ "github.com/jinzhu/gorm/dialects/mysql"
+    "gorm.io/gorm"
+    _ "gorm.io/gorm/dialects/mysql"
 )
 
 func getGormDB() *gorm.DB {

@@ -17,10 +17,13 @@ test_gen: gen
 
 test: test_unit bench test_static
 
+build:
+	go build -o bin/goqueryset ./cmd/goqueryset/
+
 bench:
 	go test -bench=. -benchtime=1s -v -run=^$$ ./internal/queryset/generator/
 
-gen:
+gen: build
 	@- $(foreach F,$(AUTOGEN_FILES), \
 		go generate $$(dirname $F); \
 	)

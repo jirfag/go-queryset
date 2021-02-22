@@ -3,12 +3,12 @@ package gorm2
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func getGormDB() *gorm.DB {
-	db, _ := gorm.Open("mysql",
-		"user:password@/dbname?charset=utf8&parseTime=True&loc=Local")
+	db, _ := gorm.Open(mysql.Open("user:password@/dbname?charset=utf8&parseTime=True&loc=Local"), &gorm.Config{})
 	return db
 }
 

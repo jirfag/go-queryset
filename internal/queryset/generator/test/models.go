@@ -1,8 +1,8 @@
 package test
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/jirfag/go-queryset/internal/queryset/generator/tmp"
+	"gorm.io/gorm"
 )
 
 //go:generate go run ../../../../cmd/goqueryset/goqueryset.go -in models.go
