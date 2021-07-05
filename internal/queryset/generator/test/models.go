@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/jirfag/go-queryset/internal/queryset/generator/tmp"
+	"github.com/zhaoshuyi-s0221/go-queryset/internal/queryset/generator/tmp"
 )
 
 //go:generate go run ../../../../cmd/goqueryset/goqueryset.go -in models.go
