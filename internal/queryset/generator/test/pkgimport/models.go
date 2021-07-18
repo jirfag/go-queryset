@@ -3,8 +3,8 @@ package models
 //go:generate goqueryset -in models.go
 
 import (
-	forex "github.com/jirfag/go-queryset/internal/queryset/generator/test/pkgimport/forex/v1"
-	forexAlias "github.com/jirfag/go-queryset/internal/queryset/generator/test/pkgimport/forex/v1"
+	forex "github.com/zhaoshuyi-s0221/go-queryset/internal/queryset/generator/test/pkgimport/forex/v1"
+	forexAlias "github.com/zhaoshuyi-s0221/go-queryset/internal/queryset/generator/test/pkgimport/forex/v1"
 )
 
 // Example is a test struct

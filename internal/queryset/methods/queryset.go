@@ -353,8 +353,8 @@ func NewCountMethod(qsTypeName string) CountMethod {
 	return CountMethod{
 		baseQuerySetMethod: newBaseQuerySetMethod(qsTypeName),
 		namedMethod:        newNamedMethod("Count"),
-		constRetMethod:     newConstRetMethod("(int, error)"),
-		constBodyMethod: newConstBodyMethod(`var count int
+		constRetMethod:     newConstRetMethod("(int64, error)"),
+		constBodyMethod: newConstBodyMethod(`var count int64
 			err := %s.Count(&count).Error
 			return count, err`, qsDbName),
 	}
@@ -396,7 +396,7 @@ func NewOffsetMethod(qsTypeName string) StructOperationOneArgMethod {
 
 // NewAllMethod creates All method
 func NewAllMethod(structName, qsTypeName string) SelectMethod {
-	return newSelectMethod("All", "Find", fmt.Sprintf("*[]%s", structName), qsTypeName)
+	return newSelectMethod("All", "Find", fmt.Sprintf("*[]*%s", structName), qsTypeName)
 }
 
 // NewOneMethod creates One method
